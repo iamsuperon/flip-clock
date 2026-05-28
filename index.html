@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flip Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; width: 100%; overflow: hidden; }
+
+/*
+  Viewport-based sizing so the clock fills the screen.
+  All card dimensions derive from --cw (card width in vw).
+  6 cards + 2 colon separators ≈ 92 vw total width.
+*/
+:root {
+  --cw:  12vw;            /* card width            */
+  --ch:  19.3vw;          /* card height  (×1.43)  */
+  --hh:  9.65vw;          /* half height  (ch / 2) */
+  --fs:  15.4vw;          /* digit font-size       */
+  --gap: 0.7vw;           /* gap between two cards */
+  --sep: 2.2vw;           /* colon separator width */
+  --br:  0.6vw;           /* border-radius         */
+  --div: 0.22vw;          /* divider height        */
+}
+
+body {
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Bebas Neue', 'Impact', sans-serif;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 70% at 50% 50%, #1a1a1a 0%, #000 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Main wrapper ── */
+.clock-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3vh;
+  user-select: none;
+}
+
+/* ── Clock row ── */
+.clock {
+  display: flex;
+  align-items: center;
+  gap: var(--sep);
+}
+.segment {
+  display: flex;
+  gap: var(--gap);
+}
+
+/* ── Individual flip card ── */
+.card {
+  position: relative;
+  width:  var(--cw);
+  height: var(--ch);
+  border-radius: var(--br);
+  perspective: calc(var(--cw) * 4);
+  flex-shrink: 0;
+}
+/* Drop shadow beneath each card */
+.card::before {
+  content: '';
+  position: absolute;
+  bottom: calc(var(--cw) * -0.12);
+  left: 10%; right: 10%;
+  height: calc(var(--cw) * 0.12);
+  background: rgba(0,0,0,0.8);
+  filter: blur(calc(var(--cw) * 0.08));
+  border-radius: 50%;
+  z-index: 0;
+}
+
+/* ── Centre divider line ── */
+.divider {
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: var(--div);
+  background: #000;
+  transform: translateY(-50%);
+  z-index: 30;
+  pointer-events: none;
+}
+
+/* ── Half-panel base ── */
+.panel {
+  position: absolute;
+  left: 0; right: 0;
+  width: 100%; height: 50%;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Static panels */
+.static-top {
+  top: 0;
+  border-radius: var(--br) var(--br) 0 0;
+  background: linear-gradient(180deg, #272727 0%, #1d1d1d 100%);
+  z-index: 2;
+  border-bottom: calc(var(--div) * 0.5) solid #000;
+}
+.static-bot {
+  bottom: 0;
+  border-radius: 0 0 var(--br) var(--br);
+  background: linear-gradient(180deg, #1a1a1a 0%, #131313 100%);
+  z-index: 2;
+  border-top: calc(var(--div) * 0.5) solid #000;
+}
+
+/* Animated panels */
+.flip-top {
+  top: 0;
+  border-radius: var(--br) var(--br) 0 0;
+  background: linear-gradient(180deg, #272727 0%, #1d1d1d 100%);
+  transform-origin: center bottom;
+  z-index: 10;
+  border-bottom: calc(var(--div) * 0.5) solid #000;
+}
+.flip-bot {
+  bottom: 0;
+  border-radius: 0 0 var(--br) var(--br);
+  background: linear-gradient(180deg, #1a1a1a 0%, #131313 100%);
+  transform-origin: center top;
+  transform: rotateX(90deg);
+  z-index: 8;
+  border-top: calc(var(--div) * 0.5) solid #000;
+}
+
+/* ── Digit text ── */
+.digit {
+  position: absolute;
+  left: 0; right: 0; width: 100%;
+  height: var(--ch);          /* full card height */
+  text-align: center;
+  line-height: var(--ch);     /* centres digit vertically */
+  font-size: var(--fs);
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  pointer-events: none;
+}
+/* Top panels: show upper half (text anchored from top) */
+.static-top .digit,
+.flip-top .digit { top: 0; }
+/* Bottom panels: shift text up so lower half is visible */
+.static-bot .digit,
+.flip-bot .digit { top: calc(-1 * var(--hh)); }
+
+/* Panel gloss */
+.static-top::after, .flip-top::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.055) 0%, transparent 60%);
+  pointer-events: none;
+}
+.static-bot::after, .flip-bot::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(0deg, rgba(0,0,0,0.25) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ── Card outer glow / border ── */
+.card-border {
+  position: absolute; inset: 0;
+  border-radius: var(--br);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 1.5vw 4vw rgba(0,0,0,0.95),
+    0 0.4vw 1vw rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(255,255,255,0.09);
+  z-index: 40;
+  pointer-events: none;
+}
+
+/* ── Flip animations ── */
+@keyframes flipTopOut {
+  0%   { transform: rotateX(0deg); }
+  100% { transform: rotateX(-90deg); }
+}
+@keyframes flipBotIn {
+  0%   { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
+}
+.flip-top.animating {
+  animation: flipTopOut 0.27s cubic-bezier(0.55, 0, 0.9, 0.5) forwards;
+}
+.flip-bot.animating {
+  animation: flipBotIn 0.27s cubic-bezier(0.1, 0.5, 0.45, 1) 0.23s forwards;
+}
+
+/* ── Colon separator dots ── */
+.separator {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--ch) * 0.18);
+  align-items: center;
+}
+.dot {
+  width:  calc(var(--cw) * 0.11);
+  height: calc(var(--cw) * 0.11);
+  border-radius: 50%;
+  background: #444;
+  box-shadow: 0 0 0.5vw rgba(200,200,200,0.08);
+  animation: blink 1s ease-in-out infinite alternate;
+}
+.dot:nth-child(2) { animation-delay: 0.15s; }
+@keyframes blink {
+  0%   { opacity: 0.35; }
+  100% { opacity: 0.8;  }
+}
+
+/* ── Info block ── */
+.info-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2vh;
+}
+
+/* Date — large, bold */
+.date-row {
+  display: flex;
+  align-items: center;
+  gap: 1.6vw;
+  color: #ffffff;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3.2vw;
+  letter-spacing: 0.5vw;
+  -webkit-text-stroke: 0.04vw #ffffff;
+}
+.date-sep {
+  display: inline-block;
+  width:  0.5vw;
+  height: 0.5vw;
+  border-radius: 50%;
+  background: #505050;
+  flex-shrink: 0;
+}
+
+/* Weather — large, readable */
+.weather-row {
+  display: flex;
+  align-items: center;
+  gap: 1.4vw;
+  color: #d8d8d8;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.1vw;
+  letter-spacing: 0.35vw;
+  min-height: 2.5vw;
+}
+.weather-temp { color: #888; }
+.weather-icon { font-style: normal; font-size: 2vw; line-height: 1; }
+.weather-dot {
+  display: inline-block;
+  width: 0.35vw; height: 0.35vw;
+  border-radius: 50%;
+  background: #363636;
+}
+
+/* ── Bottom-right: Wollongong + toggle ── */
+.bottom-right {
+  position: fixed;
+  bottom: 2.5vh; right: 2.5vw;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  gap: 2vw;
+}
+
+/* Wollongong widget — uses Bebas Neue to match the date */
+.woll-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4vh;
+}
+.woll-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1vw;
+  letter-spacing: 0.35vw;
+  color: #757575;
+}
+.woll-time {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3.4vw;
+  color: #d8d8d8;
+  letter-spacing: 0.1vw;
+  line-height: 1;
+}
+.woll-ampm {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1vw;
+  letter-spacing: 0.3vw;
+  color: #484848;
+  text-align: right;
+}
+
+/* Mode button */
+.mode-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #3e3e3e;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1vw;
+  letter-spacing: 0.25vw;
+  padding: 0.7vh 1.1vw;
+  border-radius: 0.4vw;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+.mode-btn:hover {
+  background: rgba(255,255,255,0.09);
+  color: #aaa;
+  border-color: rgba(255,255,255,0.2);
+}
+</style>
+</head>
+<body>
+
+<div class="clock-wrapper">
+  <div class="clock">
+    <div class="segment" id="hours"></div>
+    <div class="separator"><div class="dot"></div><div class="dot"></div></div>
+    <div class="segment" id="minutes"></div>
+    <div class="separator"><div class="dot"></div><div class="dot"></div></div>
+    <div class="segment" id="seconds"></div>
+  </div>
+
+  <div class="info-block">
+    <div class="date-row" id="date-row"></div>
+    <div class="weather-row" id="weather-row">FETCHING WEATHER&hellip;</div>
+  </div>
+</div>
+
+<div class="bottom-right">
+  <div class="woll-widget">
+    <div class="woll-label">WOLLONGONG.AU</div>
+    <div class="woll-time" id="woll-time">--:--:--</div>
+    <div class="woll-ampm" id="woll-ampm">--</div>
+  </div>
+  <button class="mode-btn" id="mode-btn">12H</button>
+</div>
+
+<script>
+'use strict';
+
+/* ════════════════════════════════════════
+   FlipCard
+════════════════════════════════════════ */
+class FlipCard {
+  constructor(parent) {
+    this.el = document.createElement('div');
+    this.el.className = 'card';
+    parent.appendChild(this.el);
+
+    this.stTop  = this._el('div', 'panel static-top');
+    this.stTopD = this._digit(this.stTop);
+    this.stBot  = this._el('div', 'panel static-bot');
+    this.stBotD = this._digit(this.stBot);
+    this.fTop   = this._el('div', 'panel flip-top');
+    this.fTopD  = this._digit(this.fTop);
+    this.fBot   = this._el('div', 'panel flip-bot');
+    this.fBotD  = this._digit(this.fBot);
+    this._el('div', 'divider');
+    this._el('div', 'card-border');
+
+    this.current = null;
+    this.busy    = false;
+  }
+
+  _el(tag, cls) {
+    const e = document.createElement(tag);
+    e.className = cls;
+    this.el.appendChild(e);
+    return e;
+  }
+  _digit(p) {
+    const e = document.createElement('div');
+    e.className = 'digit';
+    p.appendChild(e);
+    return e;
+  }
+
+  init(val) {
+    val = String(val);
+    this.current = val;
+    [this.stTopD, this.stBotD, this.fTopD, this.fBotD].forEach(d => d.textContent = val);
+    this.fTop.style.transform = '';
+    this.fBot.style.transform = 'rotateX(90deg)';
+  }
+
+  flip(next) {
+    next = String(next);
+    if (next === this.current || this.busy) return;
+    this.busy = true;
+    const prev = this.current;
+    this.current = next;
+
+    this.stTopD.textContent = next;  /* static-top: new digit, revealed as flip-top rotates away */
+    this.stBotD.textContent = prev;  /* static-bot: old digit, hidden under flip-bot             */
+    this.fTopD.textContent  = prev;  /* animated top: old digit, folds down                      */
+    this.fBotD.textContent  = next;  /* animated bot: new digit, rises up                        */
+
+    this.fTop.classList.remove('animating');
+    this.fBot.classList.remove('animating');
+    this.fTop.style.transform = 'rotateX(0deg)';
+    this.fBot.style.transform = 'rotateX(90deg)';
+    void this.fTop.offsetWidth; /* force reflow */
+
+    this.fTop.classList.add('animating');
+    this.fBot.classList.add('animating');
+
+    setTimeout(() => {
+      this.stBotD.textContent = next;
+      this.fTop.classList.remove('animating');
+      this.fBot.classList.remove('animating');
+      this.fTop.style.transform = 'rotateX(0deg)';
+      this.fBot.style.transform = 'rotateX(90deg)';
+      this.fTopD.textContent = next;
+      this.fBotD.textContent = next;
+      this.busy = false;
+    }, 660);
+  }
+}
+
+/* ════════════════════════════════════════
+   Build cards
+════════════════════════════════════════ */
+function makeCards(id, n) {
+  const seg = document.getElementById(id);
+  return Array.from({length: n}, () => new FlipCard(seg));
+}
+
+const hCards = makeCards('hours',   2);
+const mCards = makeCards('minutes', 2);
+const sCards = makeCards('seconds', 2);
+
+const DAYS   = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
+                'JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+
+let use24 = false;
+let prevH = '', prevM = '', prevS = '';
+
+/* ════════════════════════════════════════
+   Main clock tick
+════════════════════════════════════════ */
+function updateClock() {
+  const now = new Date();
+  let raw = now.getHours();
+  if (!use24) raw = raw % 12 || 12;
+
+  const h = String(raw).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+
+  if (!prevH) {
+    hCards[0].init(h[0]); hCards[1].init(h[1]);
+    mCards[0].init(m[0]); mCards[1].init(m[1]);
+    sCards[0].init(s[0]); sCards[1].init(s[1]);
+  } else {
+    if (h[0] !== prevH[0]) hCards[0].flip(h[0]);
+    if (h[1] !== prevH[1]) hCards[1].flip(h[1]);
+    if (m[0] !== prevM[0]) mCards[0].flip(m[0]);
+    if (m[1] !== prevM[1]) mCards[1].flip(m[1]);
+    if (s[0] !== prevS[0]) sCards[0].flip(s[0]);
+    if (s[1] !== prevS[1]) sCards[1].flip(s[1]);
+  }
+  prevH = h; prevM = m; prevS = s;
+
+  document.getElementById('date-row').innerHTML =
+    DAYS[now.getDay()] +
+    '<span class="date-sep"></span>' +
+    MONTHS[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
+}
+
+/* ════════════════════════════════════════
+   Wollongong clock — Bebas Neue, same
+   typeface as the date row
+════════════════════════════════════════ */
+function updateWollongong() {
+  const now = new Date();
+  if (use24) {
+    const t = now.toLocaleTimeString('en-AU', {
+      timeZone: 'Australia/Sydney',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false
+    });
+    document.getElementById('woll-time').textContent = t;
+    document.getElementById('woll-ampm').textContent = 'AEST / UTC+10';
+  } else {
+    const raw = now.toLocaleTimeString('en-AU', {
+      timeZone: 'Australia/Sydney',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: true
+    });
+    const parts = raw.trim().split(' ');
+    document.getElementById('woll-time').textContent = parts[0] || '--:--:--';
+    document.getElementById('woll-ampm').textContent = (parts[1] || '').toUpperCase();
+  }
+}
+
+/* ════════════════════════════════════════
+   12H / 24H toggle — both clocks follow
+════════════════════════════════════════ */
+document.getElementById('mode-btn').addEventListener('click', () => {
+  use24 = !use24;
+  document.getElementById('mode-btn').textContent = use24 ? '24H' : '12H';
+  prevH = '';
+  updateClock();
+  updateWollongong();
+});
+
+/* ════════════════════════════════════════
+   Start ticking (aligned to wall second)
+════════════════════════════════════════ */
+updateClock();
+updateWollongong();
+const drift = 1000 - (Date.now() % 1000);
+setTimeout(() => {
+  updateClock();
+  updateWollongong();
+  setInterval(() => { updateClock(); updateWollongong(); }, 1000);
+}, drift);
+
+/* ════════════════════════════════════════
+   Weather — Open-Meteo (free, no key)
+   Wollongong fetched immediately so the
+   row is never blank. Geolocation
+   upgrades it to the user's location if
+   the browser allows.
+════════════════════════════════════════ */
+const WMO_ICON = {
+  0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',
+  45:'🌫️', 48:'🌫️',
+  51:'🌦️', 53:'🌦️', 55:'🌧️',
+  61:'🌧️', 63:'🌧️', 65:'🌧️',
+  71:'❄️',  73:'❄️',  75:'❄️', 77:'❄️',
+  80:'🌦️', 81:'🌦️', 82:'🌧️',
+  95:'⛈️',  96:'⛈️',  99:'⛈️'
+};
+const WMO_DESC = {
+  0:'CLEAR SKY',        1:'MAINLY CLEAR',    2:'PARTLY CLOUDY',   3:'OVERCAST',
+  45:'FOGGY',           48:'FREEZING FOG',
+  51:'LIGHT DRIZZLE',   53:'DRIZZLE',         55:'HEAVY DRIZZLE',
+  61:'LIGHT RAIN',      63:'RAIN',            65:'HEAVY RAIN',
+  71:'LIGHT SNOW',      73:'SNOW',            75:'HEAVY SNOW',     77:'SNOW GRAINS',
+  80:'LIGHT SHOWERS',   81:'SHOWERS',         82:'HEAVY SHOWERS',
+  85:'SNOW SHOWERS',    86:'HEAVY SNOW SHOWERS',
+  95:'THUNDERSTORM',    96:'THUNDERSTORM + HAIL',  99:'HEAVY THUNDERSTORM'
+};
+
+async function fetchWeather(lat, lon) {
+  const url =
+    `https://api.open-meteo.com/v1/forecast` +
+    `?latitude=${lat}&longitude=${lon}` +
+    `&current=temperature_2m,apparent_temperature,weather_code` +
+    `&temperature_unit=celsius`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  const c     = data.current;
+  const temp  = Math.round(c.temperature_2m);
+  const feels = Math.round(c.apparent_temperature);
+  const code  = c.weather_code;
+  const icon  = WMO_ICON[code] ?? '';
+  const desc  = WMO_DESC[code] ?? 'UNKNOWN';
+
+  document.getElementById('weather-row').innerHTML =
+    (icon ? `<span class="weather-icon">${icon}</span>` : '') +
+    `<span class="weather-temp">${temp}&deg;C</span>` +
+    `<span class="weather-dot"></span>` +
+    `<span>FEELS ${feels}&deg;C</span>` +
+    `<span class="weather-dot"></span>` +
+    `<span>${desc}</span>`;
+}
+
+const WOLL = { lat: -34.4278, lon: 150.8931 };
+
+function loadWeather() {
+  /* Always fetch Wollongong immediately — never leaves row blank */
+  fetchWeather(WOLL.lat, WOLL.lon).catch(() => {
+    document.getElementById('weather-row').textContent = 'WEATHER UNAVAILABLE';
+  });
+  /* Try user's own location as upgrade */
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      p  => fetchWeather(p.coords.latitude, p.coords.longitude).catch(() => {}),
+      () => {},
+      { timeout: 6000 }
+    );
+  }
+}
+
+loadWeather();
+setInterval(loadWeather, 10 * 60 * 1000);
+</script>
+</body>
+</html>
