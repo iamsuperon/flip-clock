@@ -218,11 +218,11 @@ body::before {
 .weather-row {
   display: flex;
   align-items: center;
-  gap: 1vw;
+  gap: 1.4vw;
   color: #d8d8d8;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.8vw;
-  letter-spacing: 0.25vw;
+  font-size: 2.1vw;
+  letter-spacing: 0.35vw;
   min-height: 2.5vw;
   cursor: pointer;
 }
@@ -555,19 +555,41 @@ class FlipCard {
 }
 
 /* ══════════════════════════════════════
+   localStorage helpers — the app's memory
+══════════════════════════════════════ */
+const LS_MAIN = 'flipclock_main_location';
+const LS_SEC  = 'flipclock_sec_location';
+
+function lsSave(key,obj){ try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} }
+function lsLoad(key){ try{ const v=localStorage.getItem(key); return v?JSON.parse(v):null; }catch(e){ return null; } }
+
+/* ══════════════════════════════════════
    State
 ══════════════════════════════════════ */
 const DAYS   = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
 const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 
-// Main clock: user's local time + weather at their location
-let mainTimezone = null;   // null = use browser local time
+// Main weather location
 let mainWeatherLat = null;
 let mainWeatherLon = null;
+let weatherLabel   = '';
 
-// Secondary clock: any city the user picks
+// Secondary clock
 let secTimezone  = 'Australia/Sydney';
 let secCityLabel = 'WOLLONGONG · AU';
+
+// ── Restore saved choices from memory ──
+const savedMain = lsLoad(LS_MAIN);
+if(savedMain){
+  mainWeatherLat = savedMain.lat;
+  mainWeatherLon = savedMain.lon;
+  weatherLabel   = savedMain.label || '';
+}
+const savedSec = lsLoad(LS_SEC);
+if(savedSec){
+  secTimezone  = savedSec.tz    || 'Australia/Sydney';
+  secCityLabel = savedSec.label || 'WOLLONGONG · AU';
+}
 
 let prevH='',prevM='',prevS='';
 let secVisible = true;
@@ -579,6 +601,9 @@ function makeCards(id,n){
 const hCards=makeCards('hours',2);
 const mCards=makeCards('minutes',2);
 const sCards=makeCards('seconds',2);
+
+// Apply saved secondary clock label to DOM
+document.getElementById('sec-city-name').textContent = secCityLabel;
 
 /* ══════════════════════════════════════
    Main flip clock — always local time
@@ -665,8 +690,6 @@ setTimeout(()=>{
 const WMO_ICON={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'❄️',73:'❄️',75:'❄️',77:'❄️',80:'🌦️',81:'🌦️',82:'🌧️',95:'⛈️',96:'⛈️',99:'⛈️'};
 const WMO_DESC={0:'CLEAR SKY',1:'MAINLY CLEAR',2:'PARTLY CLOUDY',3:'OVERCAST',45:'FOGGY',48:'FREEZING FOG',51:'LIGHT DRIZZLE',53:'DRIZZLE',55:'HEAVY DRIZZLE',61:'LIGHT RAIN',63:'RAIN',65:'HEAVY RAIN',71:'LIGHT SNOW',73:'SNOW',75:'HEAVY SNOW',77:'SNOW GRAINS',80:'LIGHT SHOWERS',81:'SHOWERS',82:'HEAVY SHOWERS',85:'SNOW SHOWERS',86:'HEAVY SNOW SHOWERS',95:'THUNDERSTORM',96:'THUNDERSTORM + HAIL',99:'HEAVY THUNDERSTORM'};
 
-let weatherLabel = '';
-
 async function fetchWeather(lat,lon,label){
   const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code&temperature_unit=celsius`;
   const res=await fetch(url);
@@ -688,35 +711,21 @@ async function fetchWeather(lat,lon,label){
     (weatherLabel ? `<span class="weather-dot"></span><span class="weather-loc">${weatherLabel}</span>` : '');
 }
 
+function showSetLocationPrompt(){
+  document.getElementById('weather-row').innerHTML =
+    '<span style="color:#444;cursor:pointer" id="set-loc-link">📍 CLICK TO SET YOUR LOCATION</span>';
+  document.getElementById('set-loc-link').addEventListener('click',()=>openModal('main'));
+}
+
 function loadWeather(){
   if(mainWeatherLat!==null){
+    // We have a saved location — use it
     fetchWeather(mainWeatherLat,mainWeatherLon,weatherLabel).catch(()=>{
       document.getElementById('weather-row').textContent='WEATHER UNAVAILABLE';
     });
-    return;
-  }
-  // Try geolocation first
-  if('geolocation' in navigator){
-    navigator.geolocation.getCurrentPosition(
-      p=>{
-        mainWeatherLat=p.coords.latitude;
-        mainWeatherLon=p.coords.longitude;
-        fetchWeather(mainWeatherLat,mainWeatherLon,'').catch(()=>{
-          document.getElementById('weather-row').textContent='WEATHER UNAVAILABLE';
-        });
-      },
-      ()=>{
-        // Permission denied — show prompt to pick location
-        document.getElementById('weather-row').innerHTML =
-          '<span style="color:#444;cursor:pointer" id="set-loc-link">📍 CLICK TO SET YOUR LOCATION</span>';
-        document.getElementById('set-loc-link').addEventListener('click',()=>openModal('main'));
-      },
-      {timeout:6000}
-    );
   } else {
-    document.getElementById('weather-row').innerHTML =
-      '<span style="color:#444;cursor:pointer" id="set-loc-link">📍 CLICK TO SET YOUR LOCATION</span>';
-    document.getElementById('set-loc-link').addEventListener('click',()=>openModal('main'));
+    // No saved location — show prompt
+    showSetLocationPrompt();
   }
 }
 
@@ -792,12 +801,16 @@ function selectPlace(place){
     mainWeatherLat=place.latitude;
     mainWeatherLon=place.longitude;
     weatherLabel=label;
+    // Save to memory — persists across sessions
+    lsSave(LS_MAIN,{ lat:mainWeatherLat, lon:mainWeatherLon, label:weatherLabel });
     fetchWeather(mainWeatherLat,mainWeatherLon,weatherLabel).catch(()=>{
       document.getElementById('weather-row').textContent='WEATHER UNAVAILABLE';
     });
   } else {
     secTimezone=tz;
     secCityLabel=label;
+    // Save to memory — persists across sessions
+    lsSave(LS_SEC,{ tz:secTimezone, label:secCityLabel });
     document.getElementById('sec-city-name').textContent=label;
     updateSecClock();
   }
