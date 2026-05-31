@@ -10,20 +10,15 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; width: 100%; overflow: hidden; }
 
-/*
-  Viewport-based sizing so the clock fills the screen.
-  All card dimensions derive from --cw (card width in vw).
-  6 cards + 2 colon separators ≈ 92 vw total width.
-*/
 :root {
-  --cw:  12vw;            /* card width            */
-  --ch:  19.3vw;          /* card height  (×1.43)  */
-  --hh:  9.65vw;          /* half height  (ch / 2) */
-  --fs:  15.4vw;          /* digit font-size       */
-  --gap: 0.7vw;           /* gap between two cards */
-  --sep: 2.2vw;           /* colon separator width */
-  --br:  0.6vw;           /* border-radius         */
-  --div: 0.22vw;          /* divider height        */
+  --cw:  12vw;
+  --ch:  19.3vw;
+  --hh:  9.65vw;
+  --fs:  15.4vw;
+  --gap: 0.7vw;
+  --sep: 2.2vw;
+  --br:  0.6vw;
+  --div: 0.22vw;
 }
 
 body {
@@ -44,7 +39,6 @@ body::before {
   z-index: 0;
 }
 
-/* ── Main wrapper ── */
 .clock-wrapper {
   position: relative;
   z-index: 1;
@@ -55,7 +49,6 @@ body::before {
   user-select: none;
 }
 
-/* ── Clock row ── */
 .clock {
   display: flex;
   align-items: center;
@@ -66,7 +59,6 @@ body::before {
   gap: var(--gap);
 }
 
-/* ── Individual flip card ── */
 .card {
   position: relative;
   width:  var(--cw);
@@ -75,7 +67,6 @@ body::before {
   perspective: calc(var(--cw) * 4);
   flex-shrink: 0;
 }
-/* Drop shadow beneath each card */
 .card::before {
   content: '';
   position: absolute;
@@ -88,7 +79,6 @@ body::before {
   z-index: 0;
 }
 
-/* ── Centre divider line ── */
 .divider {
   position: absolute;
   top: 50%; left: 0; right: 0;
@@ -99,7 +89,6 @@ body::before {
   pointer-events: none;
 }
 
-/* ── Half-panel base ── */
 .panel {
   position: absolute;
   left: 0; right: 0;
@@ -109,7 +98,6 @@ body::before {
   -webkit-backface-visibility: hidden;
 }
 
-/* Static panels */
 .static-top {
   top: 0;
   border-radius: var(--br) var(--br) 0 0;
@@ -125,7 +113,6 @@ body::before {
   border-top: calc(var(--div) * 0.5) solid #000;
 }
 
-/* Animated panels */
 .flip-top {
   top: 0;
   border-radius: var(--br) var(--br) 0 0;
@@ -144,26 +131,22 @@ body::before {
   border-top: calc(var(--div) * 0.5) solid #000;
 }
 
-/* ── Digit text ── */
 .digit {
   position: absolute;
   left: 0; right: 0; width: 100%;
-  height: var(--ch);          /* full card height */
+  height: var(--ch);
   text-align: center;
-  line-height: var(--ch);     /* centres digit vertically */
+  line-height: var(--ch);
   font-size: var(--fs);
   color: #ffffff;
   letter-spacing: -0.02em;
   pointer-events: none;
 }
-/* Top panels: show upper half (text anchored from top) */
 .static-top .digit,
 .flip-top .digit { top: 0; }
-/* Bottom panels: shift text up so lower half is visible */
 .static-bot .digit,
 .flip-bot .digit { top: calc(-1 * var(--hh)); }
 
-/* Panel gloss */
 .static-top::after, .flip-top::after {
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(180deg, rgba(255,255,255,0.055) 0%, transparent 60%);
@@ -175,7 +158,6 @@ body::before {
   pointer-events: none;
 }
 
-/* ── Card outer glow / border ── */
 .card-border {
   position: absolute; inset: 0;
   border-radius: var(--br);
@@ -188,7 +170,6 @@ body::before {
   pointer-events: none;
 }
 
-/* ── Flip animations ── */
 @keyframes flipTopOut {
   0%   { transform: rotateX(0deg); }
   100% { transform: rotateX(-90deg); }
@@ -204,7 +185,6 @@ body::before {
   animation: flipBotIn 0.27s cubic-bezier(0.1, 0.5, 0.45, 1) 0.23s forwards;
 }
 
-/* ── Colon separator dots ── */
 .separator {
   display: flex;
   flex-direction: column;
@@ -225,7 +205,6 @@ body::before {
   100% { opacity: 0.8;  }
 }
 
-/* ── Info block ── */
 .info-block {
   display: flex;
   flex-direction: column;
@@ -233,7 +212,6 @@ body::before {
   gap: 1.2vh;
 }
 
-/* Date — large, bold */
 .date-row {
   display: flex;
   align-items: center;
@@ -253,7 +231,6 @@ body::before {
   flex-shrink: 0;
 }
 
-/* Weather — large, readable */
 .weather-row {
   display: flex;
   align-items: center;
@@ -273,28 +250,39 @@ body::before {
   background: #363636;
 }
 
-/* ── Bottom-right: Wollongong + toggle ── */
+/* ── Bottom-right: AU clock + toggle ── */
 .bottom-right {
   position: fixed;
   bottom: 2.5vh; right: 2.5vw;
   z-index: 100;
   display: flex;
   align-items: flex-end;
-  gap: 2vw;
+  gap: 1.4vw;
 }
 
-/* Wollongong widget — uses Bebas Neue to match the date */
+/* Wollongong widget */
 .woll-widget {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 0.4vh;
+  overflow: hidden;
+  max-width: 20vw;
+  transition: max-width 0.35s cubic-bezier(0.4,0,0.2,1),
+              opacity   0.3s ease;
+  opacity: 1;
+}
+.woll-widget.hidden {
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 .woll-label {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1vw;
   letter-spacing: 0.35vw;
   color: #757575;
+  white-space: nowrap;
 }
 .woll-time {
   font-family: 'Bebas Neue', sans-serif;
@@ -302,6 +290,7 @@ body::before {
   color: #d8d8d8;
   letter-spacing: 0.1vw;
   line-height: 1;
+  white-space: nowrap;
 }
 .woll-ampm {
   font-family: 'Bebas Neue', sans-serif;
@@ -309,10 +298,11 @@ body::before {
   letter-spacing: 0.3vw;
   color: #484848;
   text-align: right;
+  white-space: nowrap;
 }
 
-/* Mode button */
-.mode-btn {
+/* AU toggle button — eye icon style */
+.au-toggle {
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.1);
   color: #3e3e3e;
@@ -324,11 +314,22 @@ body::before {
   cursor: pointer;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
   white-space: nowrap;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5vw;
 }
-.mode-btn:hover {
+.au-toggle:hover {
   background: rgba(255,255,255,0.09);
   color: #aaa;
   border-color: rgba(255,255,255,0.2);
+}
+/* eye SVG inside the button */
+.au-toggle svg {
+  width: 1.2vw;
+  height: 1.2vw;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
 }
 </style>
 </head>
@@ -350,12 +351,19 @@ body::before {
 </div>
 
 <div class="bottom-right">
-  <div class="woll-widget">
+  <div class="woll-widget" id="woll-widget">
     <div class="woll-label">WOLLONGONG.AU</div>
     <div class="woll-time" id="woll-time">--:--:--</div>
     <div class="woll-ampm" id="woll-ampm">--</div>
   </div>
-  <button class="mode-btn" id="mode-btn">12H</button>
+  <button class="au-toggle" id="au-toggle" title="Show/hide AU clock">
+    <!-- eye open icon -->
+    <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+    AU
+  </button>
 </div>
 
 <script>
@@ -413,16 +421,16 @@ class FlipCard {
     const prev = this.current;
     this.current = next;
 
-    this.stTopD.textContent = next;  /* static-top: new digit, revealed as flip-top rotates away */
-    this.stBotD.textContent = prev;  /* static-bot: old digit, hidden under flip-bot             */
-    this.fTopD.textContent  = prev;  /* animated top: old digit, folds down                      */
-    this.fBotD.textContent  = next;  /* animated bot: new digit, rises up                        */
+    this.stTopD.textContent = next;
+    this.stBotD.textContent = prev;
+    this.fTopD.textContent  = prev;
+    this.fBotD.textContent  = next;
 
     this.fTop.classList.remove('animating');
     this.fBot.classList.remove('animating');
     this.fTop.style.transform = 'rotateX(0deg)';
     this.fBot.style.transform = 'rotateX(90deg)';
-    void this.fTop.offsetWidth; /* force reflow */
+    void this.fTop.offsetWidth;
 
     this.fTop.classList.add('animating');
     this.fBot.classList.add('animating');
@@ -456,16 +464,14 @@ const DAYS   = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SAT
 const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
                 'JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 
-let use24 = false;
 let prevH = '', prevM = '', prevS = '';
 
 /* ════════════════════════════════════════
-   Main clock tick
+   Main clock tick — always 12H
 ════════════════════════════════════════ */
 function updateClock() {
   const now = new Date();
-  let raw = now.getHours();
-  if (!use24) raw = raw % 12 || 12;
+  const raw = now.getHours() % 12 || 12;
 
   const h = String(raw).padStart(2, '0');
   const m = String(now.getMinutes()).padStart(2, '0');
@@ -492,44 +498,36 @@ function updateClock() {
 }
 
 /* ════════════════════════════════════════
-   Wollongong clock — Bebas Neue, same
-   typeface as the date row
+   Wollongong clock
 ════════════════════════════════════════ */
 function updateWollongong() {
   const now = new Date();
-  if (use24) {
-    const t = now.toLocaleTimeString('en-AU', {
-      timeZone: 'Australia/Sydney',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-      hour12: false
-    });
-    document.getElementById('woll-time').textContent = t;
-    document.getElementById('woll-ampm').textContent = 'AEST / UTC+10';
-  } else {
-    const raw = now.toLocaleTimeString('en-AU', {
-      timeZone: 'Australia/Sydney',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-      hour12: true
-    });
-    const parts = raw.trim().split(' ');
-    document.getElementById('woll-time').textContent = parts[0] || '--:--:--';
-    document.getElementById('woll-ampm').textContent = (parts[1] || '').toUpperCase();
-  }
+  const raw = now.toLocaleTimeString('en-AU', {
+    timeZone: 'Australia/Sydney',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: true
+  });
+  const parts = raw.trim().split(' ');
+  document.getElementById('woll-time').textContent = parts[0] || '--:--:--';
+  document.getElementById('woll-ampm').textContent = (parts[1] || '').toUpperCase();
 }
 
 /* ════════════════════════════════════════
-   12H / 24H toggle — both clocks follow
+   AU clock show / hide toggle
 ════════════════════════════════════════ */
-document.getElementById('mode-btn').addEventListener('click', () => {
-  use24 = !use24;
-  document.getElementById('mode-btn').textContent = use24 ? '24H' : '12H';
-  prevH = '';
-  updateClock();
-  updateWollongong();
+let auVisible = true;
+
+const eyeOpen = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+const eyeOff  = `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+
+document.getElementById('au-toggle').addEventListener('click', () => {
+  auVisible = !auVisible;
+  document.getElementById('woll-widget').classList.toggle('hidden', !auVisible);
+  document.getElementById('eye-icon').innerHTML = auVisible ? eyeOpen : eyeOff;
 });
 
 /* ════════════════════════════════════════
-   Start ticking (aligned to wall second)
+   Start ticking
 ════════════════════════════════════════ */
 updateClock();
 updateWollongong();
@@ -542,10 +540,6 @@ setTimeout(() => {
 
 /* ════════════════════════════════════════
    Weather — Open-Meteo (free, no key)
-   Wollongong fetched immediately so the
-   row is never blank. Geolocation
-   upgrades it to the user's location if
-   the browser allows.
 ════════════════════════════════════════ */
 const WMO_ICON = {
   0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',
@@ -595,11 +589,9 @@ async function fetchWeather(lat, lon) {
 const WOLL = { lat: 12.9733, lon: 124.0014 };
 
 function loadWeather() {
-  /* Always fetch Wollongong immediately — never leaves row blank */
   fetchWeather(WOLL.lat, WOLL.lon).catch(() => {
     document.getElementById('weather-row').textContent = 'WEATHER UNAVAILABLE';
   });
-  /* Try user's own location as upgrade */
   if ('geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition(
       p  => fetchWeather(p.coords.latitude, p.coords.longitude).catch(() => {}),
