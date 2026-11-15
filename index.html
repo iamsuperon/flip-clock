@@ -689,7 +689,7 @@ input:checked + .slider:before { transform: translateX(115%); background-color: 
     <div class="setting-row">
       <div>
         <div class="setting-label">EXPRESSIVE MOODS</div>
-        <div class="setting-sub">HAPPY, SAD, BORED, SUSPICIOUS, SHOCKED &amp; SLEEP</div>
+        <div class="setting-sub">WINK, ANGRY, CONFUSED, PIXEL CLOCK PEEK &amp; SLEEP</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="set-idle-expressive">
@@ -1105,13 +1105,26 @@ document.getElementById('settings-save').addEventListener('click', () => {
   resetIdleTimer();
 });
 
-/* ── Idle Timer Logic ── */
+/* ── Idle Timer & Animation Sequence Helpers ── */
 let idleTimeout = null;
 let isIdleActive = false;
 let lastMouseInsideTime = 0;
 let lookUpModeUntil = 0;
 let panToUltrawideTimer = null;
 let suspiciousGlanceTimer = null;
+let fightSleepTimers = [];
+let clockSequenceTimers = [];
+let lastClockShowTime = 0;
+
+function clearFightSleepTimers() {
+  fightSleepTimers.forEach(t => clearTimeout(t));
+  fightSleepTimers = [];
+}
+
+function clearClockSequenceTimers() {
+  clockSequenceTimers.forEach(t => clearTimeout(t));
+  clockSequenceTimers = [];
+}
 
 function resetIdleTimer() {
   clearTimeout(idleTimeout);
@@ -1140,8 +1153,22 @@ function updateGazeFromPointer(clientX, clientY) {
   lookUpModeUntil = 0;
   clearTimeout(panToUltrawideTimer);
   clearTimeout(suspiciousGlanceTimer);
+  clearFightSleepTimers();
+
+  // Dismiss pixel clock if user moves pointer directly over the 10" window
+  if (clockModeActive) {
+    clearClockSequenceTimers();
+    clockModeActive = false;
+    curClockY = 23;
+    tgtClockY = 23;
+    curEyeOffsetY = 0;
+    tgtEyeOffsetY = 0;
+  }
+
   if (currentMood !== 'normal') {
     currentMood = 'normal';
+    curBlink = 0;
+    tgtBlink = 0;
   }
   lastMouseInsideTime = Date.now();
 
@@ -1168,14 +1195,16 @@ window.addEventListener('mousemove', e => {
 }, { passive: true });
 
 document.addEventListener('mouseleave', e => {
-  if (!isIdleActive || !idleConfig.trackMouse) return;
+  if (!isIdleActive || !idleConfig.trackMouse || clockModeActive) return;
   lastMouseInsideTime = 0;
   clearTimeout(panToUltrawideTimer);
   clearTimeout(suspiciousGlanceTimer);
+  clearFightSleepTimers();
 
   if (e.clientX <= 12) {
     // 1. Mouse exits left -> passes through 24" monitor on upper-right first
     currentMood = 'normal';
+    curBlink = 0; tgtBlink = 0;
     tgtLookX = 2;
     tgtLookY = -2;
     lookUpModeUntil = Date.now() + 30000;
@@ -1214,17 +1243,26 @@ function shadeColor(hex, factor) {
   }
 }
 
-/* ── Smooth Grid & Expression State ── */
+/* ── Smooth Grid, Expression & Pixel Clock State ── */
 let animFrameId   = null;
 let behaviorTimer = null;
 
-// Moods: 'normal' | 'happy' | 'sad' | 'bored' | 'suspicious' | 'shocked' | 'sleepy' | 'sleeping'
+// Moods:
+// 'normal' | 'happy' | 'wink' | 'joy' | 'angry' | 'confused' | 'worried'
+// 'sad' | 'bored' | 'suspicious' | 'shocked' | 'sleepy' | 'sleeping'
 let currentMood = 'normal';
+let winkEyeSide = 'right';
 let curLookX = 0, curLookY = 0;
 let tgtLookX = 0, tgtLookY = 0;
 let curBlink = 0, tgtBlink = 0;
 let lastStepTime = 0;
 let zzzTick = 0;
+
+// Vertical Eye Offset & Rising Pixel Clock State
+let curEyeOffsetY = 0, tgtEyeOffsetY = 0;
+let clockModeActive = false;
+let curClockY = 23, tgtClockY = 23; // 23 = offscreen bottom, 10 = center screen
+let lastClockTickSec = -1;
 
 function resizeCanvas() {
   canvas.width = window.innerWidth;
@@ -1283,13 +1321,24 @@ const PUPIL_MASK = [
   "0011100"
 ];
 
-// 14x5 Happy Arch Mask
+// 14x5 Happy Arch Mask (^ ^)
 const HAPPY_ARCH = [
   "00001111100000",
   "00111111111000",
   "01110000011100",
   "11100000001110",
   "11000000000110"
+];
+
+// 13x7 Solid Semicircle Joy Mask
+const JOY_DOME = [
+  "0000111110000",
+  "0011111111100",
+  "0111111111110",
+  "0111111111110",
+  "1111111111111",
+  "1111100011111",
+  "1100000000011"
 ];
 
 // 5x5 Pixel 'Z' Glyph for Sleeping mode
@@ -1300,6 +1349,149 @@ const Z_GLYPH = [
   "01000",
   "11111"
 ];
+
+// 6x8 Pixel '?' Glyph for Confused mode
+const QUESTION_GLYPH = [
+  "011110",
+  "110011",
+  "000011",
+  "001110",
+  "001100",
+  "000000",
+  "001100",
+  "001100"
+];
+
+// 6x6 Pixel Anger Vein Mark
+const ANGER_GLYPH = [
+  "010010",
+  "110011",
+  "000000",
+  "000000",
+  "110011",
+  "010010"
+];
+
+// 6x9 Thick LED Clock Digits (0–9)
+const CLOCK_DIGITS = {
+  '0': [
+    "011110",
+    "110011",
+    "110011",
+    "110011",
+    "110011",
+    "110011",
+    "110011",
+    "110011",
+    "011110"
+  ],
+  '1': [
+    "001100",
+    "011100",
+    "111100",
+    "001100",
+    "001100",
+    "001100",
+    "001100",
+    "001100",
+    "111111"
+  ],
+  '2': [
+    "011110",
+    "110011",
+    "000011",
+    "000110",
+    "001100",
+    "011000",
+    "110000",
+    "110011",
+    "111111"
+  ],
+  '3': [
+    "011110",
+    "110011",
+    "000011",
+    "001110",
+    "001110",
+    "000011",
+    "000011",
+    "110011",
+    "011110"
+  ],
+  '4': [
+    "000111",
+    "001111",
+    "011011",
+    "110011",
+    "111111",
+    "000011",
+    "000011",
+    "000011",
+    "000011"
+  ],
+  '5': [
+    "111111",
+    "110000",
+    "110000",
+    "111110",
+    "000011",
+    "000011",
+    "000011",
+    "110011",
+    "011110"
+  ],
+  '6': [
+    "011110",
+    "110011",
+    "110000",
+    "111110",
+    "110011",
+    "110011",
+    "110011",
+    "110011",
+    "011110"
+  ],
+  '7': [
+    "111111",
+    "110011",
+    "000011",
+    "000110",
+    "001100",
+    "001100",
+    "001100",
+    "001100",
+    "001100"
+  ],
+  '8': [
+    "011110",
+    "110011",
+    "110011",
+    "011110",
+    "011110",
+    "110011",
+    "110011",
+    "110011",
+    "011110"
+  ],
+  '9': [
+    "011110",
+    "110011",
+    "110011",
+    "110011",
+    "011111",
+    "000011",
+    "000011",
+    "110011",
+    "011110"
+  ]
+};
+
+// 3x5 Mini AM/PM Glyphs
+const MINI_LETTERS = {
+  'A': ["010","101","111","101","101"],
+  'P': ["110","101","110","100","100"],
+  'M': ["101","111","111","101","101"]
+};
 
 function drawEyes() {
   const w = canvas.width;
@@ -1350,7 +1542,7 @@ function drawEyes() {
 
   function renderEye(baseCx, baseCy, isRightEye) {
     const scx = baseCx + socketShiftX;
-    const scy = baseCy + socketShiftY;
+    const scy = baseCy + socketShiftY + curEyeOffsetY;
 
     /* ── 1. HAPPY (^ ^ + pink blush) ── */
     if (currentMood === 'happy') {
@@ -1358,12 +1550,12 @@ function drawEyes() {
       for (let r = 0; r < HAPPY_ARCH.length; r++) {
         for (let c = 0; c < HAPPY_ARCH[r].length; c++) {
           if (HAPPY_ARCH[r][c] === '1') {
-            lightLED(baseCx - 6 + c, baseCy - 3 + r, archColor, true);
+            lightLED(baseCx - 6 + c, baseCy + curEyeOffsetY - 3 + r, archColor, true);
           }
         }
       }
       const blushX = isRightEye ? (baseCx + 3) : (baseCx - 6);
-      const blushY = baseCy + 4;
+      const blushY = baseCy + curEyeOffsetY + 4;
       for (let by = 0; by < 2; by++) {
         for (let bx = 0; bx < 4; bx++) {
           lightLED(blushX + bx, blushY + by, '#f4729b', true);
@@ -1372,14 +1564,119 @@ function drawEyes() {
       return;
     }
 
-    /* ── 2. SLEEPING (Peaceful curved closed lids + floating Zzz) ── */
+    /* ── 2. JOY DOME (Solid glowing upper semicircles) ── */
+    if (currentMood === 'joy') {
+      for (let r = 0; r < JOY_DOME.length; r++) {
+        const normY = r / (JOY_DOME.length - 1);
+        const col = shadeColor(idleConfig.eyeColor, 1.35 - normY * 0.35);
+        for (let c = 0; c < JOY_DOME[r].length; c++) {
+          if (JOY_DOME[r][c] === '1') {
+            lightLED(baseCx - 6 + c, baseCy + curEyeOffsetY - 2 + r, col, true);
+          }
+        }
+      }
+      return;
+    }
+
+    /* ── 3. ANGRY (Inward-slanted lower semicircles + anger mark) ── */
+    if (currentMood === 'angry') {
+      for (let r = 0; r < 14; r++) {
+        const dy = r - 7;
+        const normY = r / 13;
+        const col = shadeColor(idleConfig.eyeColor, 0.85 + normY * 0.5);
+        for (let c = 0; c < 13; c++) {
+          if (SOCKET_MASK[r][c] !== '1') continue;
+          const dx = c - 6;
+          const innerDist = isRightEye ? dx : -dx;
+          const browCut = -Math.floor((innerDist + 2) * 0.45);
+          if (dy < browCut) continue;
+          lightLED(baseCx + dx, baseCy + curEyeOffsetY + dy, col, true);
+        }
+      }
+      if (isRightEye && !clockModeActive) {
+        const pulse = (zzzTick % 2 === 0) ? '#c084fc' : '#f472b6';
+        for (let ar = 0; ar < 6; ar++) {
+          for (let ac = 0; ac < 6; ac++) {
+            if (ANGER_GLYPH[ar][ac] === '1') {
+              lightLED(39 + ac, 2 + ar, pulse, true);
+            }
+          }
+        }
+      }
+      return;
+    }
+
+    /* ── 4. CONFUSED / SKEPTICAL (Asymmetric flat + raised brow + '?') ── */
+    if (currentMood === 'confused') {
+      for (let r = 0; r < 14; r++) {
+        const dy = r - 7;
+        if (dy > 2) continue;
+        const normY = (dy + 3) / 6;
+        const col = shadeColor(idleConfig.eyeColor, 0.9 + normY * 0.45);
+        for (let c = 0; c < 13; c++) {
+          if (SOCKET_MASK[r][c] !== '1') continue;
+          const dx = c - 6;
+          const topLimit = isRightEye ? (-2 - Math.floor((dx + 6) / 6)) : -1;
+          if (dy < topLimit) continue;
+          lightLED(baseCx + dx, baseCy + curEyeOffsetY + dy + 1, col, true);
+        }
+      }
+      if (isRightEye && !clockModeActive) {
+        const qBob = (zzzTick % 2 === 0) ? 0 : 1;
+        const qCol = shadeColor(idleConfig.eyeColor, 1.35);
+        for (let qr = 0; qr < 8; qr++) {
+          for (let qc = 0; qc < 6; qc++) {
+            if (QUESTION_GLYPH[qr][qc] === '1') {
+              lightLED(39 + qc, 2 + qr - qBob, qCol, true);
+            }
+          }
+        }
+      }
+      return;
+    }
+
+    /* ── 5. WORRIED / DOWNCAST (Outward-sloping lower semicircles) ── */
+    if (currentMood === 'worried') {
+      for (let r = 0; r < 14; r++) {
+        const dy = r - 7;
+        const normY = r / 13;
+        const col = shadeColor(idleConfig.eyeColor, 0.8 + normY * 0.55);
+        for (let c = 0; c < 13; c++) {
+          if (SOCKET_MASK[r][c] !== '1') continue;
+          const dx = c - 6;
+          const outerDist = isRightEye ? dx : -dx;
+          const lidCut = Math.floor((outerDist + 1) * 0.45);
+          if (dy < lidCut) continue;
+          lightLED(baseCx + dx, baseCy + curEyeOffsetY + dy, col, true);
+        }
+      }
+      return;
+    }
+
+    /* ── 6. WINK (One eye closed arch, other eye open) ── */
+    if (currentMood === 'wink') {
+      const isClosedEye = (isRightEye && winkEyeSide === 'right') || (!isRightEye && winkEyeSide === 'left');
+      if (isClosedEye) {
+        const archColor = shadeColor(idleConfig.eyeColor, 1.35);
+        for (let r = 0; r < HAPPY_ARCH.length; r++) {
+          for (let c = 0; c < HAPPY_ARCH[r].length; c++) {
+            if (HAPPY_ARCH[r][c] === '1') {
+              lightLED(baseCx - 6 + c, baseCy + curEyeOffsetY - 2 + r, archColor, true);
+            }
+          }
+        }
+        return;
+      }
+    }
+
+    /* ── 7. SLEEPING (Peaceful curved closed lids + floating Zzz) ── */
     if (currentMood === 'sleeping') {
       const sleepColor = shadeColor(idleConfig.eyeColor, 0.95);
       const sleepLid = [
         [-5, 1], [-4, 2], [-3, 2], [-2, 3], [-1, 3], [0, 3], [1, 3], [2, 3], [3, 2], [4, 2], [5, 1],
         [-4, 1], [4, 1]
       ];
-      sleepLid.forEach(([dx, dy]) => lightLED(baseCx + dx, baseCy + dy, sleepColor, true));
+      sleepLid.forEach(([dx, dy]) => lightLED(baseCx + dx, baseCy + curEyeOffsetY + dy, sleepColor, true));
 
       if (isRightEye) {
         const floatOffset = Math.floor(zzzTick % 3);
@@ -1403,7 +1700,7 @@ function drawEyes() {
       return;
     }
 
-    /* ── 3. SHOCKED (Wide O_O eyes + tiny contracted pupils + subtle 1px tremor) ── */
+    /* ── 8. SHOCKED (Wide O_O eyes + tiny contracted pupils + subtle 1px tremor) ── */
     if (currentMood === 'shocked') {
       const jitterX = (zzzTick % 2 === 0) ? 0 : (isRightEye ? 1 : -1);
       for (let r = 0; r < 16; r++) {
@@ -1414,7 +1711,7 @@ function drawEyes() {
           if (SHOCKED_SOCKET[r][c] !== '1') continue;
           const dx = c - 7;
           const gx = baseCx + dx + jitterX;
-          const gy = baseCy + dy;
+          const gy = baseCy + curEyeOffsetY + dy;
 
           const inTinyPupil = Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
           const isSparkle = (dx === -2 && dy === -2);
@@ -1431,14 +1728,13 @@ function drawEyes() {
       return;
     }
 
-    /* ── 4. NORMAL / BLINK / SAD / BORED / SUSPICIOUS / SLEEPY ── */
+    /* ── 9. NORMAL / BLINK / SAD / BORED / SUSPICIOUS / SLEEPY ── */
     let topClip = -7 + curBlink;
     let botClip = 6 - Math.floor(curBlink * 0.45);
 
     if (currentMood === 'bored') {
       topClip = Math.max(topClip, -2);
     } else if (currentMood === 'suspicious') {
-      // Narrow skeptical squint: both top and bottom lids pinched tight
       topClip = Math.max(topClip, -1);
       botClip = Math.min(botClip, 2);
     } else if (currentMood === 'sleepy') {
@@ -1483,7 +1779,6 @@ function drawEyes() {
         const pdy = gy - pcy;
         let inPupil = false;
         if (currentMood === 'suspicious') {
-          // Compact side-eye pupil tucked inside the narrow squint
           inPupil = Math.abs(pdx) <= 2 && Math.abs(pdy) <= 1;
         } else if (pdy >= -4 && pdy <= 3 && pdx >= -3 && pdx <= 3) {
           inPupil = PUPIL_MASK[pdy + 4][pdx + 3] === '1';
@@ -1505,7 +1800,6 @@ function drawEyes() {
       }
     }
 
-    // Crisp horizontal eyelid bars for Bored, Sleepy, and Suspicious squint
     if (currentMood === 'bored' || currentMood === 'sleepy') {
       const lidRow = currentMood === 'bored' ? -2 : 0;
       const lidColor = shadeColor(idleConfig.eyeColor, 1.25);
@@ -1523,6 +1817,75 @@ function drawEyes() {
 
   renderEye(12, 11, false);
   renderEye(33, 11, true);
+
+  /* ── 10. RISING PIXEL DIGITAL CLOCK (HH:MM + AM/PM) ── */
+  if (curClockY < rows) {
+    const now = new Date();
+    const rawH = now.getHours();
+    const h12 = rawH % 12 || 12;
+    const hStr = String(h12).padStart(2, '0');
+    const mStr = String(now.getMinutes()).padStart(2, '0');
+    const ampm = rawH >= 12 ? 'PM' : 'AM';
+    const colonOn = (now.getSeconds() % 2 === 0);
+
+    // Subtle dark backdrop bar so rising clock cleanly pushes/separates from eyes
+    for (let by = curClockY - 1; by <= curClockY + 9; by++) {
+      if (by < 0 || by >= rows) continue;
+      for (let bx = 4; bx <= 41; bx++) {
+        ctx.fillStyle = '#0c0c0c';
+        const px = offsetX + bx * cellSize + gap / 2;
+        const py = offsetY + by * cellSize + gap / 2;
+        ctx.beginPath();
+        ctx.roundRect(px, py, pixelSize, pixelSize, radius);
+        ctx.fill();
+      }
+    }
+
+    function drawClockDigit(ch, startX, startY) {
+      const glyph = CLOCK_DIGITS[ch];
+      if (!glyph) return;
+      for (let r = 0; r < 9; r++) {
+        const normY = r / 8;
+        const col = shadeColor(idleConfig.eyeColor, 1.35 - normY * 0.35);
+        for (let c = 0; c < 6; c++) {
+          if (glyph[r][c] === '1') {
+            lightLED(startX + c, startY + r, col, true);
+          }
+        }
+      }
+    }
+
+    // Centered HH : MM + AM/PM layout (cols 0..45)
+    drawClockDigit(hStr[0], 6, curClockY);
+    drawClockDigit(hStr[1], 13, curClockY);
+
+    if (colonOn) {
+      const colonCol = shadeColor(idleConfig.eyeColor, 1.25);
+      lightLED(20, curClockY + 2, colonCol, true);
+      lightLED(20, curClockY + 3, colonCol, true);
+      lightLED(20, curClockY + 5, colonCol, true);
+      lightLED(20, curClockY + 6, colonCol, true);
+    }
+
+    drawClockDigit(mStr[0], 22, curClockY);
+    drawClockDigit(mStr[1], 29, curClockY);
+
+    // Mini AM/PM badge on right (cols 37..43)
+    const ampmColor = shadeColor(idleConfig.eyeColor, 0.85);
+    [ampm[0], ampm[1]].forEach((ltr, idx) => {
+      const mGlyph = MINI_LETTERS[ltr];
+      if (!mGlyph) return;
+      const sx = 37 + idx * 4;
+      const sy = curClockY + 4;
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 3; c++) {
+          if (mGlyph[r][c] === '1') {
+            lightLED(sx + c, sy + r, ampmColor, true);
+          }
+        }
+      }
+    });
+  }
 }
 
 /* ── Smooth 60fps Stepper Loop ── */
@@ -1531,7 +1894,7 @@ let lastZzzTime = 0;
 function animationLoop(timestamp) {
   if (!isIdleActive) return;
 
-  if (timestamp - lastStepTime >= 45) {
+  if (timestamp - lastStepTime >= 42) {
     lastStepTime = timestamp;
     let changed = false;
 
@@ -1552,11 +1915,29 @@ function animationLoop(timestamp) {
       }
       changed = true;
     }
+    if (curEyeOffsetY !== tgtEyeOffsetY) {
+      curEyeOffsetY += Math.sign(tgtEyeOffsetY - curEyeOffsetY);
+      changed = true;
+    }
+    if (curClockY !== tgtClockY) {
+      curClockY += Math.sign(tgtClockY - curClockY);
+      changed = true;
+    }
 
     if (changed) drawEyes();
   }
 
-  if ((currentMood === 'sleeping' || currentMood === 'shocked') && timestamp - lastZzzTime >= 420) {
+  // Update live ticking pixel clock every second while visible
+  if (curClockY < 22) {
+    const sec = new Date().getSeconds();
+    if (sec !== lastClockTickSec) {
+      lastClockTickSec = sec;
+      drawEyes();
+    }
+  }
+
+  const animatedMoods = ['sleeping', 'shocked', 'angry', 'confused'];
+  if (animatedMoods.includes(currentMood) && timestamp - lastZzzTime >= 420) {
     lastZzzTime = timestamp;
     zzzTick++;
     drawEyes();
@@ -1566,8 +1947,10 @@ function animationLoop(timestamp) {
 }
 
 /* ── Natural Eye & Expressive Behavior Scheduler ── */
+const NON_BLINK_MOODS = ['happy', 'joy', 'angry', 'confused', 'worried', 'wink', 'sleeping', 'shocked'];
+
 function triggerBlink(doubleBlink = false) {
-  if (!isIdleActive || currentMood === 'happy' || currentMood === 'sleeping' || currentMood === 'shocked') return;
+  if (!isIdleActive || NON_BLINK_MOODS.includes(currentMood)) return;
   tgtBlink = 7;
 
   setTimeout(() => {
@@ -1587,8 +1970,135 @@ function triggerBlink(doubleBlink = false) {
   }, 170);
 }
 
-function scheduleNextBehavior() {
+/* ── Funny Pixel Clock Takeover Sequence (Rise -> Eyes Fight -> 35s Hold -> Drop & Bounce) ── */
+function startPixelClockSequence() {
+  clearClockSequenceTimers();
+  clearFightSleepTimers();
+  clearTimeout(suspiciousGlanceTimer);
   if (!isIdleActive) return;
+
+  clockModeActive = true;
+  lastClockShowTime = Date.now();
+  curBlink = 0;
+  tgtBlink = 0;
+
+  // Stage 1: Clock starts peeking from the bottom; eyes notice and look down!
+  currentMood = 'normal';
+  tgtLookX = 0;
+  tgtLookY = 2;
+  curClockY = 22;
+  tgtClockY = 17;
+
+  // Stage 2: Clock pushes up to center (row 10); eyes get shoved upward (-6) and look annoyed/angry!
+  clockSequenceTimers.push(setTimeout(() => {
+    if (!isIdleActive || !clockModeActive) return;
+    tgtClockY = 10;
+    tgtEyeOffsetY = -6;
+    currentMood = 'angry';
+    drawEyes();
+  }, 650));
+
+  // Stage 3: Eyes squint down in protest while clock stays centered (2.5s in)
+  clockSequenceTimers.push(setTimeout(() => {
+    if (!isIdleActive || !clockModeActive) return;
+    currentMood = 'bored';
+    tgtLookX = 0;
+    tgtLookY = 2;
+    drawEyes();
+  }, 2500));
+
+  // Stage 4: Periodic impatient glances while clock is on screen (12s & 24s in)
+  clockSequenceTimers.push(setTimeout(() => {
+    if (!isIdleActive || !clockModeActive) return;
+    tgtLookX = -2;
+    tgtLookY = 2;
+  }, 12000));
+
+  clockSequenceTimers.push(setTimeout(() => {
+    if (!isIdleActive || !clockModeActive) return;
+    tgtLookX = 2;
+    tgtLookY = 2;
+  }, 24000));
+
+  // Stage 5: After 35 seconds, clock slides back down; eyes drop and bounce back to center!
+  const clockHoldMs = 35000;
+  clockSequenceTimers.push(setTimeout(() => {
+    if (!isIdleActive || !clockModeActive) return;
+    tgtClockY = 23; // Slide clock off bottom
+    currentMood = 'normal';
+    tgtLookX = 0;
+    tgtLookY = 0;
+
+    // Drop past center (+2) for bounce overshoot
+    tgtEyeOffsetY = 2;
+
+    // Bounce #1 upward (-1)
+    clockSequenceTimers.push(setTimeout(() => {
+      if (!isIdleActive) return;
+      tgtEyeOffsetY = -1;
+    }, 360));
+
+    // Settle at center (0) with a happy victory expression!
+    clockSequenceTimers.push(setTimeout(() => {
+      if (!isIdleActive) return;
+      tgtEyeOffsetY = 0;
+      clockModeActive = false;
+      currentMood = 'happy';
+      drawEyes();
+
+      clockSequenceTimers.push(setTimeout(() => {
+        if (!isIdleActive) return;
+        currentMood = 'normal';
+        drawEyes();
+        behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2000);
+      }, 1800));
+    }, 540));
+  }, clockHoldMs));
+}
+
+/* ── Post-Sleep "Fighting Sleep -> Wake Up" Sequence ── */
+function startFightSleepSequence() {
+  clearFightSleepTimers();
+  if (!isIdleActive) return;
+
+  currentMood = 'sleepy';
+  tgtLookX = 0;
+  tgtLookY = 1;
+  curBlink = 3;
+  tgtBlink = 2;
+  drawEyes();
+
+  fightSleepTimers.push(setTimeout(() => {
+    if (!isIdleActive) return;
+    tgtBlink = 6;
+  }, 1100));
+
+  fightSleepTimers.push(setTimeout(() => {
+    if (!isIdleActive) return;
+    tgtBlink = 0;
+    tgtLookY = 0;
+  }, 2000));
+
+  fightSleepTimers.push(setTimeout(() => {
+    if (!isIdleActive) return;
+    tgtBlink = 5;
+  }, 2700));
+
+  fightSleepTimers.push(setTimeout(() => {
+    if (!isIdleActive) return;
+    currentMood = 'normal';
+    curBlink = 0;
+    tgtBlink = 0;
+    tgtLookX = 0;
+    tgtLookY = 0;
+    drawEyes();
+    triggerBlink(true);
+    behaviorTimer = setTimeout(scheduleNextBehavior, 2000 + Math.random() * 1800);
+  }, 3400));
+}
+
+function scheduleNextBehavior() {
+  if (!isIdleActive || clockModeActive) return;
 
   const now = Date.now();
   const pointerActiveInside = idleConfig.trackMouse && (now - lastMouseInsideTime < 2500);
@@ -1602,7 +2112,7 @@ function scheduleNextBehavior() {
     return;
   }
 
-  // 2. If cursor exited left edge -> settled on Ultrawide (center-up) with slight horizontal scans, blinking & happy eyes
+  // 2. If cursor exited left edge -> settled on Ultrawide (center-up)
   if (inLookUpMode) {
     if (roll < 0.38) {
       triggerBlink(Math.random() < 0.30);
@@ -1636,19 +2146,53 @@ function scheduleNextBehavior() {
     return;
   }
 
-  // 3. Expressive Moods Mode (when enabled in settings)
-  if (idleConfig.expressive && roll >= 0.55) {
-    const moods = ['happy', 'sad', 'bored', 'suspicious', 'shocked', 'sleepy', 'sleeping'];
-    const chosenMood = moods[Math.floor(Math.random() * moods.length)];
+  // 3. Periodically show the rising Pixel Digital Clock (~every 30s+ of idle)
+  if (idleConfig.expressive && (now - lastClockShowTime > 28000) && roll >= 0.65) {
+    startPixelClockSequence();
+    return;
+  }
+
+  // 4. Expressive Moods Mode (Weighted so 'shocked' is rare!)
+  if (idleConfig.expressive && roll >= 0.48) {
+    const weightedMoods = [
+      { mood: 'happy',      weight: 10 },
+      { mood: 'wink',       weight: 10 },
+      { mood: 'joy',        weight: 10 },
+      { mood: 'suspicious', weight: 10 },
+      { mood: 'confused',   weight: 9  },
+      { mood: 'bored',      weight: 8  },
+      { mood: 'sad',        weight: 7  },
+      { mood: 'worried',    weight: 7  },
+      { mood: 'angry',      weight: 6  },
+      { mood: 'sleepy',     weight: 6  },
+      { mood: 'sleeping',   weight: 6  },
+      { mood: 'shocked',    weight: 2  } // Much rarer now (~2% of mood rolls)
+    ];
+
+    const totalWeight = weightedMoods.reduce((sum, item) => sum + item.weight, 0);
+    let r = Math.random() * totalWeight;
+    let chosenMood = 'happy';
+    for (const item of weightedMoods) {
+      if (r < item.weight) {
+        chosenMood = item.mood;
+        break;
+      }
+      r -= item.weight;
+    }
+
     currentMood = chosenMood;
     curBlink = 0; tgtBlink = 0;
     clearTimeout(suspiciousGlanceTimer);
+    clearFightSleepTimers();
 
-    if (chosenMood === 'bored') {
+    if (chosenMood === 'wink') {
+      winkEyeSide = Math.random() < 0.5 ? 'right' : 'left';
+      tgtLookX = winkEyeSide === 'right' ? 1 : -1;
+      tgtLookY = -1;
+    } else if (chosenMood === 'bored') {
       tgtLookX = Math.random() < 0.5 ? -2 : 2;
       tgtLookY = 0;
     } else if (chosenMood === 'suspicious') {
-      // Narrow side-eye glance, then dart to the other side halfway through
       const firstDir = Math.random() < 0.5 ? -2 : 2;
       tgtLookX = firstDir;
       tgtLookY = 0;
@@ -1669,7 +2213,15 @@ function scheduleNextBehavior() {
 
     drawEyes();
 
-    const holdDuration = chosenMood === 'sleeping' ? 4500 : (2800 + Math.random() * 1400);
+    if (chosenMood === 'sleeping') {
+      behaviorTimer = setTimeout(() => {
+        if (!isIdleActive) return;
+        startFightSleepSequence();
+      }, 4500);
+      return;
+    }
+
+    const holdDuration = chosenMood === 'wink' ? 1800 : (2800 + Math.random() * 1400);
     behaviorTimer = setTimeout(() => {
       if (!isIdleActive) return;
       currentMood = 'normal';
@@ -1681,9 +2233,9 @@ function scheduleNextBehavior() {
     return;
   }
 
-  // 4. Calm / Default Idle Behavior (Blinking & Looking Around)
+  // 5. Calm / Default Idle Behavior (Blinking & Looking Around)
   currentMood = 'normal';
-  if (roll < 0.25) {
+  if (roll < 0.22) {
     triggerBlink(Math.random() < 0.30);
     behaviorTimer = setTimeout(scheduleNextBehavior, 2200 + Math.random() * 2800);
   } else {
@@ -1716,6 +2268,10 @@ function startIdleEyes() {
   curLookX = 0; curLookY = 0;
   tgtLookX = 0; tgtLookY = 0;
   curBlink = 0; tgtBlink = 0;
+  curEyeOffsetY = 0; tgtEyeOffsetY = 0;
+  clockModeActive = false;
+  curClockY = 23; tgtClockY = 23;
+  lastClockShowTime = Date.now() - 15000; // First clock peek happens ~15-20s after idle starts
   lookUpModeUntil = 0;
   lastMouseInsideTime = 0;
 
@@ -1731,6 +2287,11 @@ function stopIdleEyes() {
   clearTimeout(behaviorTimer);
   clearTimeout(panToUltrawideTimer);
   clearTimeout(suspiciousGlanceTimer);
+  clearFightSleepTimers();
+  clearClockSequenceTimers();
+  clockModeActive = false;
+  curClockY = 23; tgtClockY = 23;
+  curEyeOffsetY = 0; tgtEyeOffsetY = 0;
   idleOverlay.classList.remove('active');
   resetIdleTimer();
 }
