@@ -688,8 +688,8 @@ input:checked + .slider:before { transform: translateX(115%); background-color: 
 
     <div class="setting-row">
       <div>
-        <div class="setting-label">FOLLOW MOUSE CURSOR</div>
-        <div class="setting-sub">TRACK POINTER &amp; GUESS UPPER MONITORS</div>
+        <div class="setting-label">FOLLOW MOUSE IN WINDOW</div>
+        <div class="setting-sub">TRACK CURSOR &amp; LOOK UP ON LEFT EXIT</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="set-idle-track">
@@ -1094,7 +1094,8 @@ document.getElementById('settings-save').addEventListener('click', () => {
 /* ── Idle Timer Logic ── */
 let idleTimeout = null;
 let isIdleActive = false;
-let lastMouseTrackTime = 0;
+let lastMouseInsideTime = 0;
+let lookUpModeUntil = 0; // Timestamp until which "looking up at upper monitors" mode stays active
 
 function resetIdleTimer() {
   clearTimeout(idleTimeout);
@@ -1112,31 +1113,20 @@ function resetIdleTimer() {
   }, { passive: true });
 });
 
-// Wake back up to flip clock ONLY on click/tap or key press (so mouse tracking works!)
+// Wake back up to flip clock ONLY on click/tap or key press
 idleOverlay.addEventListener('click', stopIdleEyes);
 window.addEventListener('keydown', () => {
   if (isIdleActive) stopIdleEyes();
 });
 
-/* ── Multi-Monitor Smart Gaze Guessing (Display 2 Ultrawide vs Display 3 24") ── */
-let lastPtrX = null;
-let lastPtrY = null;
-let velX = 0;
-let velY = 0;
-let externalMonitorGaze = null; // Holds { x, y } when cursor is out on Monitor 2 or 3
-
+/* ── In-Window Cursor Tracking & Left-Edge Exit Trigger ── */
 function updateGazeFromPointer(clientX, clientY) {
   if (!isIdleActive || !idleConfig.trackMouse) return;
-  isHappy = false;
-  externalMonitorGaze = null; // Cursor is physically inside Monitor 4 (10" screen)
-  lastMouseTrackTime = Date.now();
 
-  if (lastPtrX !== null && lastPtrY !== null) {
-    velX = clientX - lastPtrX;
-    velY = clientY - lastPtrY;
-  }
-  lastPtrX = clientX;
-  lastPtrY = clientY;
+  // Cancel "look-up" mode as soon as cursor comes back into the clock window
+  lookUpModeUntil = 0;
+  isHappy = false;
+  lastMouseInsideTime = Date.now();
 
   const w = window.innerWidth;
   const h = window.innerHeight;
@@ -1160,45 +1150,27 @@ window.addEventListener('mousemove', e => {
   }
 }, { passive: true });
 
-// Smart exit detection: guesses Monitor 2 (Ultrawide above) vs Monitor 3 (24" right)
+// When cursor exits the window:
+// If it exits on the LEFT edge -> activate 30s simulated "looking up left/right" mode
+// Otherwise -> return immediately to normal idle behavior
 document.addEventListener('mouseleave', e => {
   if (!isIdleActive || !idleConfig.trackMouse) return;
-  lastMouseTrackTime = Date.now();
-  isHappy = false;
+  lastMouseInsideTime = 0;
 
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const x = e.clientX;
-  const y = e.clientY;
-
-  if (x >= w - 12 || (y <= 12 && x > w * 0.65) || velX > 8) {
-    // Exited toward the right / upper-right -> Monitor 3 (24" monitor)
-    externalMonitorGaze = { x: 2, y: -1 };
-  } else if (y <= 12 || velY < -6) {
-    // Exited straight up -> Monitor 2 (Ultrawide main monitor)
-    const biasX = x > w * 0.6 ? 1 : (x < w * 0.4 ? -1 : 0);
-    externalMonitorGaze = { x: biasX, y: -2 };
-  } else if (x <= 12) {
-    // Exited left edge
-    externalMonitorGaze = { x: -2, y: -1 };
+  if (e.clientX <= 12) {
+    // Exited left edge (toward Display 3 / Display 2): look up immediately and run 30s look-up cycle
+    isHappy = false;
+    tgtLookY = -2;
+    tgtLookX = -1;
+    lookUpModeUntil = Date.now() + 30000; // 30 seconds before returning to normal idle
+    clearTimeout(behaviorTimer);
+    behaviorTimer = setTimeout(scheduleNextBehavior, 1200);
   } else {
-    externalMonitorGaze = { x: 0, y: 2 };
+    // Exited top/right/bottom: immediately revert to normal idle
+    lookUpModeUntil = 0;
+    clearTimeout(behaviorTimer);
+    behaviorTimer = setTimeout(scheduleNextBehavior, 600);
   }
-
-  tgtLookX = externalMonitorGaze.x;
-  tgtLookY = externalMonitorGaze.y;
-  lastPtrX = null;
-  lastPtrY = null;
-});
-
-// When you click inside a window on Monitor 2 or 3, keep looking up toward your active screen
-window.addEventListener('blur', () => {
-  if (!isIdleActive || !idleConfig.trackMouse) return;
-  if (!externalMonitorGaze) {
-    externalMonitorGaze = { x: 0, y: -2 };
-  }
-  tgtLookX = externalMonitorGaze.x;
-  tgtLookY = externalMonitorGaze.y;
 });
 
 /* ── Color Shading Helper ── */
@@ -1457,13 +1429,56 @@ function triggerBlink(doubleBlink = false) {
 function scheduleNextBehavior() {
   if (!isIdleActive) return;
 
-  // Keep gazing toward Monitor 2 or 3 if the mouse exited there or moved recently
-  const mouseActiveRecently = idleConfig.trackMouse && (
-    (Date.now() - lastMouseTrackTime < 4000) || externalMonitorGaze !== null
-  );
+  const now = Date.now();
+  const pointerActiveInside = idleConfig.trackMouse && (now - lastMouseInsideTime < 2500);
+  const inLookUpMode = Date.now() < lookUpModeUntil;
   const roll = Math.random();
 
-  if (roll < 0.40 || mouseActiveRecently) {
+  // 1. If cursor is actively moving inside this window, only blink while tracking pointer
+  if (pointerActiveInside) {
+    triggerBlink(Math.random() < 0.30);
+    behaviorTimer = setTimeout(scheduleNextBehavior, 2200 + Math.random() * 2800);
+    return;
+  }
+
+  // 2. If cursor exited left edge -> simulated "looking up left & right" + blinking + happy eyes
+  if (inLookUpMode) {
+    if (roll < 0.35) {
+      triggerBlink(Math.random() < 0.30);
+      behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
+    } else if (roll < 0.82) {
+      isHappy = false;
+      const upMoves = [
+        { x: -2, y: -2 }, // looking up-left
+        { x: -1, y: -2 }, // slight up-left
+        { x:  0, y: -2 }, // looking straight up
+        { x:  1, y: -2 }, // slight up-right
+        { x:  2, y: -2 }  // looking up-right
+      ];
+      const pick = upMoves[Math.floor(Math.random() * upMoves.length)];
+      tgtLookX = pick.x;
+      tgtLookY = pick.y;
+      behaviorTimer = setTimeout(scheduleNextBehavior, 1400 + Math.random() * 1800);
+    } else {
+      tgtLookX = 0;
+      tgtLookY = 0;
+      curLookX = 0;
+      curLookY = 0;
+      isHappy = true;
+      drawEyes();
+      setTimeout(() => {
+        if (!isIdleActive) return;
+        isHappy = false;
+        tgtLookY = -2; // resume looking up after happy squint
+        drawEyes();
+        behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2000);
+      }, 2000);
+    }
+    return;
+  }
+
+  // 3. Normal default idle animation (all directions, blinking, happy eyes)
+  if (roll < 0.40) {
     triggerBlink(Math.random() < 0.30);
     behaviorTimer = setTimeout(scheduleNextBehavior, 2400 + Math.random() * 3200);
 
@@ -1512,9 +1527,8 @@ function startIdleEyes() {
   tgtLookX = 0; tgtLookY = 0;
   curBlink = 0; tgtBlink = 0;
   isHappy  = false;
-  externalMonitorGaze = null;
-  lastPtrX = null;
-  lastPtrY = null;
+  lookUpModeUntil = 0;
+  lastMouseInsideTime = 0;
 
   drawEyes();
   idleOverlay.classList.add('active');
