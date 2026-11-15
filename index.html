@@ -1123,7 +1123,9 @@ document.getElementById('settings-save').addEventListener('click', () => {
   lsSave(LS_IDLE, idleConfig);
   closeSettings();
   resetIdleTimer();
-  if (isIdleActive) schedulePeriodicPixelClock();
+  if (isIdleActive && !clockModeActive && bouncePhase === 'none') {
+    schedulePeriodicPixelClock();
+  }
 });
 
 /* ── Idle Timer & Animation Sequence Helpers ── */
@@ -1135,7 +1137,13 @@ let panToUltrawideTimer = null;
 let suspiciousGlanceTimer = null;
 let fightSleepTimers = [];
 let clockSequenceTimers = [];
+let blinkTimers = [];
 let periodicClockTimer = null;
+
+function clearBlinkTimers() {
+  blinkTimers.forEach(t => clearTimeout(t));
+  blinkTimers = [];
+}
 
 function clearFightSleepTimers() {
   fightSleepTimers.forEach(t => clearTimeout(t));
@@ -1156,8 +1164,9 @@ function schedulePeriodicPixelClock() {
     if (!isIdleActive) return;
     if (!clockModeActive && bouncePhase === 'none') {
       startPixelClockSequence();
+    } else {
+      schedulePeriodicPixelClock();
     }
-    schedulePeriodicPixelClock();
   }, intervalMs);
 }
 
@@ -1189,8 +1198,8 @@ function updateGazeFromPointer(clientX, clientY) {
   clearTimeout(panToUltrawideTimer);
   clearTimeout(suspiciousGlanceTimer);
   clearFightSleepTimers();
+  clearBlinkTimers();
 
-  // Dismiss pixel clock if user moves pointer directly over the 10" window
   if (clockModeActive || bouncePhase !== 'none') {
     clearClockSequenceTimers();
     clockModeActive = false;
@@ -1205,6 +1214,7 @@ function updateGazeFromPointer(clientX, clientY) {
     tgtBlink = 0;
     clearTimeout(behaviorTimer);
     behaviorTimer = setTimeout(scheduleNextBehavior, 1800);
+    schedulePeriodicPixelClock();
   }
 
   if (currentMood !== 'normal') {
@@ -1242,6 +1252,7 @@ document.addEventListener('mouseleave', e => {
   clearTimeout(panToUltrawideTimer);
   clearTimeout(suspiciousGlanceTimer);
   clearFightSleepTimers();
+  clearBlinkTimers();
 
   if (e.clientX <= 12) {
     currentMood = 'normal';
@@ -1589,9 +1600,13 @@ function drawEyes() {
   const socketShiftY = Math.abs(curLookY) >= 2 ? Math.sign(curLookY) : 0;
 
   if (curEyeOffsetY > -21) {
-    const isDeformed = Math.abs(eyeScaleX - 1) > 0.02 || Math.abs(eyeScaleY - 1) > 0.02;
+    const isDeformed = bouncePhase !== 'none' || Math.abs(eyeScaleX - 1) > 0.015 || Math.abs(eyeScaleY - 1) > 0.015;
 
-    function renderNormalOpenEye(scx, scy, isRightEye) {
+    function renderNormalOpenEye(rawScx, rawScy, isRightEye) {
+      // Snap to integer grid coordinates so pdx/pdy never suffer IEEE-754 float drift
+      const scx = Math.round(rawScx);
+      const scy = Math.round(rawScy);
+
       let topClip = -7 + curBlink;
       let botClip = 6 - Math.floor(curBlink * 0.45);
 
@@ -1615,8 +1630,8 @@ function drawEyes() {
         return;
       }
 
-      const pcx = scx + curLookX;
-      const pcy = scy + curLookY + (currentMood === 'sad' ? 1 : 0);
+      const pcx = Math.round(scx + curLookX);
+      const pcy = Math.round(scy + curLookY + (currentMood === 'sad' ? 1 : 0));
 
       for (let r = 0; r < 14; r++) {
         const dy = r - 7;
@@ -1644,7 +1659,8 @@ function drawEyes() {
           if (currentMood === 'suspicious') {
             inPupil = Math.abs(pdx) <= 2 && Math.abs(pdy) <= 1;
           } else if (pdy >= -4 && pdy <= 3 && pdx >= -3 && pdx <= 3) {
-            inPupil = PUPIL_MASK[pdy + 4][pdx + 3] === '1';
+            const rowStr = PUPIL_MASK[pdy + 4];
+            inPupil = rowStr ? (rowStr[pdx + 3] === '1') : false;
           }
 
           const isBigHighlight = currentMood === 'suspicious'
@@ -1682,7 +1698,7 @@ function drawEyes() {
       const scx = baseCx + socketShiftX;
       const scy = baseCy + socketShiftY + curEyeOffsetY;
 
-      /* ── SQUASH & STRETCH PHYSICS RENDERING (During Bounce) ── */
+      /* ── SQUASH & STRETCH PHYSICS RENDERING (During Entire Bounce) ── */
       if (isDeformed) {
         const rx = 6.2 * eyeScaleX;
         const ry = 6.6 * eyeScaleY;
@@ -1850,6 +1866,7 @@ function drawEyes() {
           }
         } else {
           curBlink = 0;
+          tgtBlink = 0;
           renderNormalOpenEye(scx, scy, isRightEye);
         }
         return;
@@ -1982,6 +1999,7 @@ let lastZzzTime = 0;
 
 function animationLoop(timestamp) {
   if (!isIdleActive) return;
+  animFrameId = requestAnimationFrame(animationLoop);
 
   if (!lastPhysTime) lastPhysTime = timestamp;
   const dt = Math.min(0.05, (timestamp - lastPhysTime) / 1000);
@@ -1992,6 +2010,8 @@ function animationLoop(timestamp) {
   /* ── 1. Fluid Squash-and-Stretch Gravity Bounce Physics ── */
   if (bouncePhase !== 'none') {
     needsDraw = true;
+    curBlink = 0;
+    tgtBlink = 0;
 
     if (bouncePhase === 'falling') {
       const gravity = 145;
@@ -2034,7 +2054,6 @@ function animationLoop(timestamp) {
       eyeScaleY += (1.0 - eyeScaleY) * Math.min(1, dt * 18);
 
       if (Math.abs(curEyeOffsetY) < 0.08 && Math.abs(eyeScaleX - 1) < 0.015) {
-        // Hard reset all state cleanly when landing completes
         curEyeOffsetY = 0;
         tgtEyeOffsetY = 0;
         eyeVelY = 0;
@@ -2059,6 +2078,7 @@ function animationLoop(timestamp) {
           tgtBlink = 0;
           drawEyes();
           behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2000);
+          schedulePeriodicPixelClock();
         }, 1600));
       }
     }
@@ -2097,7 +2117,6 @@ function animationLoop(timestamp) {
     }
   }
 
-  // Update live ticking pixel clock every second while visible
   if (curClockY < 22) {
     const sec = new Date().getSeconds();
     if (sec !== lastClockTickSec) {
@@ -2114,8 +2133,6 @@ function animationLoop(timestamp) {
   }
 
   if (needsDraw) drawEyes();
-
-  animFrameId = requestAnimationFrame(animationLoop);
 }
 
 /* ── Natural Eye & Expressive Behavior Scheduler ── */
@@ -2123,31 +2140,34 @@ const NON_BLINK_MOODS = ['happy', 'joy', 'angry', 'confused', 'worried', 'wink',
 
 function triggerBlink(doubleBlink = false) {
   if (!isIdleActive || NON_BLINK_MOODS.includes(currentMood) || clockModeActive || bouncePhase !== 'none') return;
+  clearBlinkTimers();
   tgtBlink = 7;
 
-  setTimeout(() => {
-    if (!isIdleActive) return;
+  blinkTimers.push(setTimeout(() => {
+    if (!isIdleActive || clockModeActive || bouncePhase !== 'none') return;
     tgtBlink = 0;
 
     if (doubleBlink) {
-      setTimeout(() => {
-        if (!isIdleActive) return;
+      blinkTimers.push(setTimeout(() => {
+        if (!isIdleActive || clockModeActive || bouncePhase !== 'none') return;
         tgtBlink = 7;
-        setTimeout(() => {
+        blinkTimers.push(setTimeout(() => {
           if (!isIdleActive) return;
           tgtBlink = 0;
-        }, 160);
-      }, 240);
+        }, 160));
+      }, 240));
     }
-  }, 170);
+  }, 170));
 }
 
 /* ── Pixel Clock Takeover Sequence ── */
 function startPixelClockSequence() {
   clearClockSequenceTimers();
   clearFightSleepTimers();
+  clearBlinkTimers();
   clearTimeout(suspiciousGlanceTimer);
   clearTimeout(behaviorTimer);
+  clearTimeout(periodicClockTimer);
   if (!isIdleActive) return;
 
   clockModeActive = true;
@@ -2166,6 +2186,8 @@ function startPixelClockSequence() {
   clockSequenceTimers.push(setTimeout(() => {
     if (!isIdleActive || !clockModeActive) return;
     currentMood = 'angry';
+    curBlink = 0;
+    tgtBlink = 0;
     tgtClockY = 7;
     tgtEyeOffsetY = -22;
     drawEyes();
@@ -2179,6 +2201,8 @@ function startPixelClockSequence() {
     curEyeOffsetY = -22;
     tgtEyeOffsetY = -22;
     currentMood = 'normal';
+    curBlink = 0;
+    tgtBlink = 0;
     tgtLookX = 0;
     tgtLookY = 0;
     drawEyes();
@@ -2309,7 +2333,9 @@ function scheduleNextBehavior() {
     }
 
     currentMood = chosenMood;
-    curBlink = 0; tgtBlink = 0;
+    curBlink = 0;
+    tgtBlink = 0;
+    clearBlinkTimers();
     clearTimeout(suspiciousGlanceTimer);
     clearFightSleepTimers();
 
@@ -2424,6 +2450,7 @@ function stopIdleEyes() {
   clearTimeout(suspiciousGlanceTimer);
   clearFightSleepTimers();
   clearClockSequenceTimers();
+  clearBlinkTimers();
   clearTimeout(periodicClockTimer);
   clockModeActive = false;
   bouncePhase = 'none';
