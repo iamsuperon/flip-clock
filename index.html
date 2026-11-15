@@ -1194,10 +1194,13 @@ function updateGazeFromPointer(clientX, clientY) {
   if (clockModeActive) {
     clearClockSequenceTimers();
     clockModeActive = false;
+    bouncePhase = 'none';
     curClockY = 23;
     tgtClockY = 23;
     curEyeOffsetY = 0;
     tgtEyeOffsetY = 0;
+    eyeScaleX = 1;
+    eyeScaleY = 1;
     clearTimeout(behaviorTimer);
     behaviorTimer = setTimeout(scheduleNextBehavior, 1800);
   }
@@ -1280,7 +1283,7 @@ function shadeColor(hex, factor) {
   }
 }
 
-/* ── Smooth Grid, Expression & Pixel Clock State ── */
+/* ── Smooth Grid, Expression, Physics Bounce & Pixel Clock State ── */
 let animFrameId   = null;
 let behaviorTimer = null;
 
@@ -1293,10 +1296,19 @@ let curLookX = 0, curLookY = 0;
 let tgtLookX = 0, tgtLookY = 0;
 let curBlink = 0, tgtBlink = 0;
 let lastStepTime = 0;
+let lastPhysTime = 0;
 let zzzTick = 0;
 
-// Vertical Eye Offset (-20 = completely offscreen top) & Rising Pixel Clock State
+// Vertical Eye Offset (-22 = completely offscreen top, +5 = invisible floor) & Squash/Stretch Physics
 let curEyeOffsetY = 0, tgtEyeOffsetY = 0;
+let eyeVelY = 0;
+let eyeScaleX = 1.0, eyeScaleY = 1.0;
+let bouncePhase = 'none'; // 'none' | 'falling' | 'squashing' | 'settling'
+let bounceCount = 0;
+let squashTimer = 0;
+const INVISIBLE_FLOOR_OFFSET = 5; // 5 grids below normal center (row 11 + 5 = 16)
+
+// Rising Pixel Clock State
 let clockModeActive = false;
 let curClockY = 23, tgtClockY = 23; // 23 = offscreen bottom, 7 = center screen
 let lastClockTickSec = -1;
@@ -1559,15 +1571,17 @@ function drawEyes() {
   }
 
   function lightLED(gx, gy, color, glow = true) {
-    if (gx < 0 || gx >= cols || gy < 0 || gy >= rows) return;
+    const ix = Math.round(gx);
+    const iy = Math.round(gy);
+    if (ix < 0 || ix >= cols || iy < 0 || iy >= rows) return;
     ctx.save();
     ctx.fillStyle = color;
     if (glow) {
       ctx.shadowColor = color;
       ctx.shadowBlur = cellSize * 0.28;
     }
-    const px = offsetX + gx * cellSize + gap / 2;
-    const py = offsetY + gy * cellSize + gap / 2;
+    const px = offsetX + ix * cellSize + gap / 2;
+    const py = offsetY + iy * cellSize + gap / 2;
     ctx.beginPath();
     ctx.roundRect(px, py, pixelSize, pixelSize, radius);
     ctx.fill();
@@ -1578,10 +1592,58 @@ function drawEyes() {
   const socketShiftY = Math.abs(curLookY) >= 2 ? Math.sign(curLookY) : 0;
 
   // Only render eyes if they haven't been pushed completely off the top edge
-  if (curEyeOffsetY > -19) {
+  if (curEyeOffsetY > -21) {
+    const isDeformed = Math.abs(eyeScaleX - 1) > 0.02 || Math.abs(eyeScaleY - 1) > 0.02;
+
     function renderEye(baseCx, baseCy, isRightEye) {
       const scx = baseCx + socketShiftX;
       const scy = baseCy + socketShiftY + curEyeOffsetY;
+
+      /* ── SQUASH & STRETCH PHYSICS RENDERING (During Bounce) ── */
+      if (isDeformed) {
+        const rx = 6.2 * eyeScaleX;
+        const ry = 6.6 * eyeScaleY;
+        const minX = Math.floor(scx - rx - 1);
+        const maxX = Math.ceil(scx + rx + 1);
+        const minY = Math.floor(scy - ry - 1);
+        const maxY = Math.ceil(scy + ry + 1);
+
+        const prx = 3.1 * eyeScaleX;
+        const pry = 3.5 * eyeScaleY;
+        const pcx = scx + curLookX * eyeScaleX;
+        const pcy = scy + curLookY * eyeScaleY;
+
+        for (let gy = minY; gy <= maxY; gy++) {
+          const dy = gy - scy;
+          const ny = dy / ry;
+          const normY = Math.max(0, Math.min(1, (ny + 1) / 2));
+          const shadedIris = shadeColor(idleConfig.eyeColor, 0.55 + normY * 0.87);
+
+          for (let gx = minX; gx <= maxX; gx++) {
+            const dx = gx - scx;
+            const nx = dx / rx;
+            if (nx * nx + ny * ny > 1.0) continue;
+
+            const pdx = (gx - pcx) / prx;
+            const pdy = (gy - pcy) / pry;
+            const inPupil = (pdx * pdx + pdy * pdy) <= 1.0;
+
+            // Specular highlight scales smoothly with the eye
+            const h1x = Math.round(pcx - 2 * eyeScaleX);
+            const h1y = Math.round(pcy - 3 * eyeScaleY);
+            const isHighlight = (Math.abs(gx - h1x) <= 0.6 && Math.abs(gy - h1y) <= 0.6);
+
+            if (isHighlight) {
+              lightLED(gx, gy, '#ffffff', true);
+            } else if (inPupil) {
+              lightLED(gx, gy, idleConfig.pupilColor, false);
+            } else {
+              lightLED(gx, gy, shadedIris, true);
+            }
+          }
+        }
+        return;
+      }
 
       /* ── 1. HAPPY (^ ^ + pink blush) ── */
       if (currentMood === 'happy') {
@@ -1882,7 +1944,6 @@ function drawEyes() {
       }
     }
 
-    // Centered HH : MM + AM/PM layout (cols 0..45)
     drawClockDigit(hStr[0], 6, curClockY);
     drawClockDigit(hStr[1], 13, curClockY);
 
@@ -1897,7 +1958,6 @@ function drawEyes() {
     drawClockDigit(mStr[0], 22, curClockY);
     drawClockDigit(mStr[1], 29, curClockY);
 
-    // Mini AM/PM badge on right (cols 37..43)
     const ampmColor = shadeColor(idleConfig.eyeColor, 0.85);
     [ampm[0], ampm[1]].forEach((ltr, idx) => {
       const mGlyph = MINI_LETTERS[ltr];
@@ -1915,23 +1975,101 @@ function drawEyes() {
   }
 }
 
-/* ── Smooth 60fps Stepper Loop ── */
+/* ── Smooth 60fps Stepper & Squash-and-Stretch Physics Loop ── */
 let lastZzzTime = 0;
 
 function animationLoop(timestamp) {
   if (!isIdleActive) return;
 
-  if (timestamp - lastStepTime >= 38) {
+  if (!lastPhysTime) lastPhysTime = timestamp;
+  const dt = Math.min(0.05, (timestamp - lastPhysTime) / 1000);
+  lastPhysTime = timestamp;
+
+  let needsDraw = false;
+
+  /* ── 1. Fluid Squash-and-Stretch Gravity Bounce Physics ── */
+  if (bouncePhase !== 'none') {
+    needsDraw = true;
+
+    if (bouncePhase === 'falling') {
+      const gravity = 145; // grid units / sec^2
+      eyeVelY += gravity * dt;
+      curEyeOffsetY += eyeVelY * dt;
+
+      // Velocity-based vertical stretch (Frames 6 -> 7 -> 8)
+      const speedRatio = Math.min(1, Math.abs(eyeVelY) / 58);
+      eyeScaleY = 1.0 + speedRatio * 0.46;
+      eyeScaleX = 1.0 - speedRatio * 0.22;
+
+      // Hit the invisible floor (+5 grids below normal center)
+      if (curEyeOffsetY >= INVISIBLE_FLOOR_OFFSET) {
+        curEyeOffsetY = INVISIBLE_FLOOR_OFFSET;
+        bounceCount++;
+        bouncePhase = 'squashing';
+        squashTimer = bounceCount === 1 ? 0.085 : 0.065;
+
+        // Frame 9: Impact squash flat against the invisible floor!
+        const impactIntensity = bounceCount === 1 ? 1.0 : 0.55;
+        eyeScaleX = 1.0 + 0.38 * impactIntensity;
+        eyeScaleY = 1.0 - 0.36 * impactIntensity;
+        // Shift center slightly downward so bottom of squashed eye stays planted on floor
+        curEyeOffsetY = INVISIBLE_FLOOR_OFFSET + 6.6 * (1 - eyeScaleY);
+      }
+    } else if (bouncePhase === 'squashing') {
+      squashTimer -= dt;
+      if (squashTimer <= 0) {
+        if (bounceCount === 1) {
+          // First rebound off the invisible floor upward
+          curEyeOffsetY = INVISIBLE_FLOOR_OFFSET;
+          eyeVelY = -36;
+          bouncePhase = 'falling';
+        } else if (bounceCount === 2) {
+          // Second smaller hop off the invisible floor
+          curEyeOffsetY = INVISIBLE_FLOOR_OFFSET;
+          eyeVelY = -20;
+          bouncePhase = 'falling';
+        } else {
+          // Final impact -> smoothly spring back up to resting center (0)
+          bouncePhase = 'settling';
+        }
+      }
+    } else if (bouncePhase === 'settling') {
+      // Smooth spring return to center (0) and 1.0x1.0 proportions
+      curEyeOffsetY += (0 - curEyeOffsetY) * Math.min(1, dt * 16);
+      eyeScaleX += (1.0 - eyeScaleX) * Math.min(1, dt * 18);
+      eyeScaleY += (1.0 - eyeScaleY) * Math.min(1, dt * 18);
+
+      if (Math.abs(curEyeOffsetY) < 0.08 && Math.abs(eyeScaleX - 1) < 0.015) {
+        curEyeOffsetY = 0;
+        tgtEyeOffsetY = 0;
+        eyeScaleX = 1.0;
+        eyeScaleY = 1.0;
+        bouncePhase = 'none';
+        clockModeActive = false;
+
+        // Happy victory reaction after landing cleanly!
+        currentMood = 'happy';
+        clockSequenceTimers.push(setTimeout(() => {
+          if (!isIdleActive) return;
+          currentMood = 'normal';
+          drawEyes();
+          behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2000);
+        }, 1600));
+      }
+    }
+  }
+
+  /* ── 2. Grid Gaze, Blink & Clock Slide Stepper ── */
+  if (timestamp - lastStepTime >= 36) {
     lastStepTime = timestamp;
-    let changed = false;
 
     if (curLookX !== tgtLookX) {
       curLookX += Math.sign(tgtLookX - curLookX);
-      changed = true;
+      needsDraw = true;
     }
     if (curLookY !== tgtLookY) {
       curLookY += Math.sign(tgtLookY - curLookY);
-      changed = true;
+      needsDraw = true;
     }
     if (curBlink !== tgtBlink) {
       const step = tgtBlink > curBlink ? 2 : 1;
@@ -1940,21 +2078,18 @@ function animationLoop(timestamp) {
       } else {
         curBlink = Math.max(tgtBlink, curBlink - step);
       }
-      changed = true;
+      needsDraw = true;
     }
-    if (curEyeOffsetY !== tgtEyeOffsetY) {
-      // Slightly faster vertical movement when falling/bouncing
+    if (bouncePhase === 'none' && curEyeOffsetY !== tgtEyeOffsetY) {
       const diff = tgtEyeOffsetY - curEyeOffsetY;
       const step = Math.abs(diff) > 6 ? 2 : 1;
       curEyeOffsetY += Math.sign(diff) * step;
-      changed = true;
+      needsDraw = true;
     }
     if (curClockY !== tgtClockY) {
       curClockY += Math.sign(tgtClockY - curClockY);
-      changed = true;
+      needsDraw = true;
     }
-
-    if (changed) drawEyes();
   }
 
   // Update live ticking pixel clock every second while visible
@@ -1962,16 +2097,18 @@ function animationLoop(timestamp) {
     const sec = new Date().getSeconds();
     if (sec !== lastClockTickSec) {
       lastClockTickSec = sec;
-      drawEyes();
+      needsDraw = true;
     }
   }
 
   const animatedMoods = ['sleeping', 'shocked', 'angry', 'confused'];
-  if (animatedMoods.includes(currentMood) && curEyeOffsetY > -19 && timestamp - lastZzzTime >= 420) {
+  if (animatedMoods.includes(currentMood) && curEyeOffsetY > -21 && timestamp - lastZzzTime >= 420) {
     lastZzzTime = timestamp;
     zzzTick++;
-    drawEyes();
+    needsDraw = true;
   }
+
+  if (needsDraw) drawEyes();
 
   animFrameId = requestAnimationFrame(animationLoop);
 }
@@ -2004,7 +2141,8 @@ function triggerBlink(doubleBlink = false) {
    1. Clock rises from bottom & pushes eyes completely off the top edge
    2. Clock stays centered alone for 12 seconds
    3. Screen turns completely black (blank)
-   4. Eyes fall from the top, bounce, and settle back at center! ── */
+   4. Eyes drop from the top with fluid squash-and-stretch physics, bounce off
+      the invisible floor (+5 grids below center), and spring back to center! ── */
 function startPixelClockSequence() {
   clearClockSequenceTimers();
   clearFightSleepTimers();
@@ -2013,6 +2151,9 @@ function startPixelClockSequence() {
   if (!isIdleActive) return;
 
   clockModeActive = true;
+  bouncePhase = 'none';
+  eyeScaleX = 1.0;
+  eyeScaleY = 1.0;
   curBlink = 0;
   tgtBlink = 0;
 
@@ -2023,12 +2164,12 @@ function startPixelClockSequence() {
   curClockY = 22;
   tgtClockY = 17;
 
-  // Stage 2: Clock rises to center (row 7) and shoves eyes completely off-screen top (-20)
+  // Stage 2: Clock rises to center (row 7) and shoves eyes completely off-screen top (-22)
   clockSequenceTimers.push(setTimeout(() => {
     if (!isIdleActive || !clockModeActive) return;
     currentMood = 'angry';
     tgtClockY = 7;
-    tgtEyeOffsetY = -20; // Completely above the top edge of the LED grid
+    tgtEyeOffsetY = -22;
     drawEyes();
   }, 550));
 
@@ -2036,48 +2177,23 @@ function startPixelClockSequence() {
   const clockDisplayDurationMs = 12000;
   clockSequenceTimers.push(setTimeout(() => {
     if (!isIdleActive || !clockModeActive) return;
-    curClockY = 23; // Instant vanish to blank screen
+    curClockY = 23;
     tgtClockY = 23;
-    curEyeOffsetY = -20;
-    tgtEyeOffsetY = -20;
+    curEyeOffsetY = -22;
+    tgtEyeOffsetY = -22;
     currentMood = 'normal';
     tgtLookX = 0;
     tgtLookY = 0;
-    drawEyes(); // Renders pure blank LED matrix
+    drawEyes();
 
-    // Stage 4: After 650ms of blank screen, eyes fall from the top and bounce!
+    // Stage 4: After 550ms of blank screen, trigger fluid gravity fall & invisible floor bounce!
     clockSequenceTimers.push(setTimeout(() => {
       if (!isIdleActive || !clockModeActive) return;
-      tgtEyeOffsetY = 3; // Fall all the way down past center (+3 overshoot)
-
-      // Bounce #1 upward (-2)
-      clockSequenceTimers.push(setTimeout(() => {
-        if (!isIdleActive) return;
-        tgtEyeOffsetY = -2;
-      }, 480));
-
-      // Bounce #2 tiny downward (+1)
-      clockSequenceTimers.push(setTimeout(() => {
-        if (!isIdleActive) return;
-        tgtEyeOffsetY = 1;
-      }, 680));
-
-      // Settle at center (0) with happy victory expression
-      clockSequenceTimers.push(setTimeout(() => {
-        if (!isIdleActive) return;
-        tgtEyeOffsetY = 0;
-        clockModeActive = false;
-        currentMood = 'happy';
-        drawEyes();
-
-        clockSequenceTimers.push(setTimeout(() => {
-          if (!isIdleActive) return;
-          currentMood = 'normal';
-          drawEyes();
-          behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2000);
-        }, 1800));
-      }, 820));
-    }, 650));
+      curEyeOffsetY = -19;
+      eyeVelY = 6;
+      bounceCount = 0;
+      bouncePhase = 'falling';
+    }, 550));
   }, clockDisplayDurationMs));
 }
 
@@ -2123,7 +2239,7 @@ function startFightSleepSequence() {
 }
 
 function scheduleNextBehavior() {
-  if (!isIdleActive || clockModeActive) return;
+  if (!isIdleActive || clockModeActive || bouncePhase !== 'none') return;
 
   const now = Date.now();
   const pointerActiveInside = idleConfig.trackMouse && (now - lastMouseInsideTime < 2500);
@@ -2288,10 +2404,14 @@ function startIdleEyes() {
   tgtLookX = 0; tgtLookY = 0;
   curBlink = 0; tgtBlink = 0;
   curEyeOffsetY = 0; tgtEyeOffsetY = 0;
+  eyeVelY = 0;
+  eyeScaleX = 1.0; eyeScaleY = 1.0;
+  bouncePhase = 'none';
   clockModeActive = false;
   curClockY = 23; tgtClockY = 23;
   lookUpModeUntil = 0;
   lastMouseInsideTime = 0;
+  lastPhysTime = 0;
 
   drawEyes();
   idleOverlay.classList.add('active');
@@ -2310,6 +2430,8 @@ function stopIdleEyes() {
   clearClockSequenceTimers();
   clearTimeout(periodicClockTimer);
   clockModeActive = false;
+  bouncePhase = 'none';
+  eyeScaleX = 1.0; eyeScaleY = 1.0;
   curClockY = 23; tgtClockY = 23;
   curEyeOffsetY = 0; tgtEyeOffsetY = 0;
   idleOverlay.classList.remove('active');
