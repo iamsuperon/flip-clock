@@ -689,7 +689,7 @@ input:checked + .slider:before { transform: translateX(115%); background-color: 
     <div class="setting-row">
       <div>
         <div class="setting-label">FOLLOW MOUSE CURSOR</div>
-        <div class="setting-sub">EYES TRACK POINTER &amp; SCREEN EDGES</div>
+        <div class="setting-sub">TRACK POINTER &amp; GUESS UPPER MONITORS</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="set-idle-track">
@@ -1118,23 +1118,32 @@ window.addEventListener('keydown', () => {
   if (isIdleActive) stopIdleEyes();
 });
 
-/* ── Mouse Cursor Tracking (Inside 10" monitor + Screen Exit Memory for Main/24" Monitors) ── */
+/* ── Multi-Monitor Smart Gaze Guessing (Display 2 Ultrawide vs Display 3 24") ── */
+let lastPtrX = null;
+let lastPtrY = null;
+let velX = 0;
+let velY = 0;
+let externalMonitorGaze = null; // Holds { x, y } when cursor is out on Monitor 2 or 3
+
 function updateGazeFromPointer(clientX, clientY) {
   if (!isIdleActive || !idleConfig.trackMouse) return;
   isHappy = false;
+  externalMonitorGaze = null; // Cursor is physically inside Monitor 4 (10" screen)
   lastMouseTrackTime = Date.now();
+
+  if (lastPtrX !== null && lastPtrY !== null) {
+    velX = clientX - lastPtrX;
+    velY = clientY - lastPtrY;
+  }
+  lastPtrX = clientX;
+  lastPtrY = clientY;
 
   const w = window.innerWidth;
   const h = window.innerHeight;
 
-  // Normalize cursor position from -1 to +1 relative to center of the 10" monitor
   const nx = (clientX - w / 2) / (w / 2);
   const ny = (clientY - h / 2) / (h / 2);
 
-  // Map to -2..+2 grid coordinates:
-  // |nx| < 0.22 -> 0 (center)
-  // |nx| < 0.65 -> ±1 (pupil shifts 1 grid, socket stays)
-  // |nx| >= 0.65 -> ±2 (pupil shifts 2 grids + socket shifts 1 grid!)
   const mapCoord = val => {
     if (Math.abs(val) < 0.22) return 0;
     if (Math.abs(val) < 0.65) return Math.sign(val) * 1;
@@ -1151,8 +1160,7 @@ window.addEventListener('mousemove', e => {
   }
 }, { passive: true });
 
-// When cursor leaves the 10" screen toward your ultrawide (top) or 24" monitor (right),
-// lock gaze toward the exit edge!
+// Smart exit detection: guesses Monitor 2 (Ultrawide above) vs Monitor 3 (24" right)
 document.addEventListener('mouseleave', e => {
   if (!isIdleActive || !idleConfig.trackMouse) return;
   lastMouseTrackTime = Date.now();
@@ -1163,24 +1171,34 @@ document.addEventListener('mouseleave', e => {
   const x = e.clientX;
   const y = e.clientY;
 
-  if (y <= 5) {
-    // Exited top edge toward Ultrawide (Display 2) or upper-right toward 24" (Display 3)
-    tgtLookY = -2;
-    if (x > w * 0.72) tgtLookX = 2;
-    else if (x < w * 0.28) tgtLookX = -2;
-    else tgtLookX = 0;
-  } else if (x >= w - 5) {
-    // Exited right edge toward 24" monitor (Display 3)
-    tgtLookX = 2;
-    tgtLookY = y < h * 0.4 ? -1 : 0;
-  } else if (x <= 5) {
+  if (x >= w - 12 || (y <= 12 && x > w * 0.65) || velX > 8) {
+    // Exited toward the right / upper-right -> Monitor 3 (24" monitor)
+    externalMonitorGaze = { x: 2, y: -1 };
+  } else if (y <= 12 || velY < -6) {
+    // Exited straight up -> Monitor 2 (Ultrawide main monitor)
+    const biasX = x > w * 0.6 ? 1 : (x < w * 0.4 ? -1 : 0);
+    externalMonitorGaze = { x: biasX, y: -2 };
+  } else if (x <= 12) {
     // Exited left edge
-    tgtLookX = -2;
-    tgtLookY = y < h * 0.4 ? -1 : 0;
-  } else if (y >= h - 5) {
-    // Exited bottom edge
-    tgtLookY = 2;
+    externalMonitorGaze = { x: -2, y: -1 };
+  } else {
+    externalMonitorGaze = { x: 0, y: 2 };
   }
+
+  tgtLookX = externalMonitorGaze.x;
+  tgtLookY = externalMonitorGaze.y;
+  lastPtrX = null;
+  lastPtrY = null;
+});
+
+// When you click inside a window on Monitor 2 or 3, keep looking up toward your active screen
+window.addEventListener('blur', () => {
+  if (!isIdleActive || !idleConfig.trackMouse) return;
+  if (!externalMonitorGaze) {
+    externalMonitorGaze = { x: 0, y: -2 };
+  }
+  tgtLookX = externalMonitorGaze.x;
+  tgtLookY = externalMonitorGaze.y;
 });
 
 /* ── Color Shading Helper ── */
@@ -1439,17 +1457,17 @@ function triggerBlink(doubleBlink = false) {
 function scheduleNextBehavior() {
   if (!isIdleActive) return;
 
-  // Check if user moved mouse recently (within last 4 seconds)
-  const mouseActiveRecently = idleConfig.trackMouse && (Date.now() - lastMouseTrackTime < 4000);
+  // Keep gazing toward Monitor 2 or 3 if the mouse exited there or moved recently
+  const mouseActiveRecently = idleConfig.trackMouse && (
+    (Date.now() - lastMouseTrackTime < 4000) || externalMonitorGaze !== null
+  );
   const roll = Math.random();
 
   if (roll < 0.40 || mouseActiveRecently) {
-    // Still blink naturally even while tracking the cursor!
     triggerBlink(Math.random() < 0.30);
     behaviorTimer = setTimeout(scheduleNextBehavior, 2400 + Math.random() * 3200);
 
   } else if (roll < 0.85) {
-    // Random idle glances when mouse isn't actively moving
     isHappy = false;
     const moves = [
       { x:  1, y:  0 },
@@ -1468,7 +1486,6 @@ function scheduleNextBehavior() {
     behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2600);
 
   } else {
-    // Happy ^ ^ blush expression
     tgtLookX = 0;
     tgtLookY = 0;
     curLookX = 0;
@@ -1495,6 +1512,9 @@ function startIdleEyes() {
   tgtLookX = 0; tgtLookY = 0;
   curBlink = 0; tgtBlink = 0;
   isHappy  = false;
+  externalMonitorGaze = null;
+  lastPtrX = null;
+  lastPtrY = null;
 
   drawEyes();
   idleOverlay.classList.add('active');
