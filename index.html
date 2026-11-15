@@ -39,6 +39,35 @@ body::before {
   z-index: 0;
 }
 
+/* ── Top-right Settings Gear ── */
+.top-right {
+  position: fixed;
+  top: 2.5vh; right: 2.5vw;
+  z-index: 100;
+}
+.gear-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #3e3e3e;
+  padding: 0.8vh 0.8vw;
+  border-radius: 0.4vw;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gear-btn:hover {
+  background: rgba(255,255,255,0.09);
+  color: #aaa;
+  border-color: rgba(255,255,255,0.2);
+  transform: rotate(30deg);
+}
+.gear-btn svg {
+  width: 1.4vw; height: 1.4vw;
+  min-width: 18px; min-height: 18px;
+}
+
 /* ── Main wrapper ── */
 .clock-wrapper {
   position: relative;
@@ -235,7 +264,6 @@ body::before {
   border-radius: 50%;
   background: #363636;
 }
-/* location label inside weather row */
 .weather-loc {
   color: #555;
   font-size: 1.5vw;
@@ -330,7 +358,7 @@ body::before {
   flex-shrink: 0;
 }
 
-/* ── City search modal ── */
+/* ── Modals (City search & Settings) ── */
 .modal-overlay {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.85);
@@ -357,13 +385,14 @@ body::before {
   box-shadow: 0 4vw 8vw rgba(0,0,0,0.9);
   display: flex;
   flex-direction: column;
-  gap: 1.5vh;
+  gap: 1.8vh;
 }
 .modal-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.5vw;
+  min-font-size: 20px;
   letter-spacing: 0.4vw;
-  color: #666;
+  color: #888;
 }
 .modal-input-wrap {
   display: flex;
@@ -439,19 +468,157 @@ body::before {
 .modal-cancel {
   background: none;
   border: none;
-  color: #3a3a3a;
+  color: #555;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1vw;
+  font-size: 1.1vw;
   letter-spacing: 0.25vw;
   cursor: pointer;
   text-align: center;
   transition: color 0.2s;
   padding: 0.5vh 0;
 }
-.modal-cancel:hover { color: #888; }
+.modal-cancel:hover { color: #bbb; }
+
+/* ── Settings Controls ── */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #181818;
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 1.2vh 1.2vw;
+  border-radius: 0.5vw;
+}
+.setting-label {
+  font-size: 1.25vw;
+  letter-spacing: 0.2vw;
+  color: #ccc;
+}
+.setting-sub {
+  font-size: 0.85vw;
+  letter-spacing: 0.15vw;
+  color: #555;
+}
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 3.2vw;
+  min-width: 44px;
+  height: 1.7vw;
+  min-height: 24px;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #2a2a2a;
+  transition: .25s;
+  border-radius: 34px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 70%;
+  aspect-ratio: 1;
+  left: 10%;
+  bottom: 15%;
+  background-color: #777;
+  transition: .25s;
+  border-radius: 50%;
+}
+input:checked + .slider { background-color: #3a3a3a; border-color: rgba(255,255,255,0.3); }
+input:checked + .slider:before { transform: translateX(115%); background-color: #fff; }
+
+.setting-number {
+  width: 5.5vw;
+  min-width: 70px;
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 0.4vw;
+  color: #fff;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3vw;
+  letter-spacing: 0.15vw;
+  padding: 0.5vh 0.6vw;
+  text-align: center;
+  outline: none;
+}
+.setting-number:focus { border-color: rgba(255,255,255,0.4); }
+
+.setting-color {
+  -webkit-appearance: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  width: 3vw;
+  min-width: 42px;
+  height: 2vw;
+  min-height: 28px;
+  border-radius: 0.4vw;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+.setting-color::-webkit-color-swatch-wrapper { padding: 2px; }
+.setting-color::-webkit-color-swatch { border: none; border-radius: 0.25vw; }
+
+.settings-actions {
+  display: flex;
+  gap: 1vw;
+  margin-top: 0.5vh;
+}
+.btn-primary {
+  flex: 1;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 0.5vw;
+  color: #fff;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2vw;
+  letter-spacing: 0.25vw;
+  padding: 1vh 0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Fullscreen Pixel Eyes Overlay ── */
+.idle-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+  cursor: pointer;
+}
+.idle-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+#eyes-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 </style>
 </head>
 <body>
+
+<!-- Top-right Settings Gear -->
+<div class="top-right">
+  <button class="gear-btn" id="gear-btn" title="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </button>
+</div>
 
 <div class="clock-wrapper">
   <div class="clock">
@@ -501,6 +668,50 @@ body::before {
     <div class="modal-status" id="modal-status"></div>
     <button class="modal-cancel" id="modal-cancel">CANCEL</button>
   </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-overlay">
+  <div class="modal">
+    <div class="modal-title">IDLE ANIMATION SETTINGS</div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">ENABLE IDLE EYES</div>
+        <div class="setting-sub">SHOW PIXEL EYES WHEN INACTIVE</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="set-idle-enabled">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">WAIT TIME (MINUTES)</div>
+        <div class="setting-sub">E.G. 10, 15, OR 0.1 TO TEST</div>
+      </div>
+      <input type="number" id="set-idle-mins" class="setting-number" min="0.05" max="240" step="any" value="10">
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">PIXEL EYE COLOR</div>
+        <div class="setting-sub">CHOOSE LED GLOW COLOR</div>
+      </div>
+      <input type="color" id="set-idle-color" class="setting-color" value="#ffffff">
+    </div>
+
+    <div class="settings-actions">
+      <button class="btn-primary" id="settings-save">SAVE &amp; CLOSE</button>
+    </div>
+    <button class="modal-cancel" id="settings-cancel">CANCEL</button>
+  </div>
+</div>
+
+<!-- Fullscreen Pixel Eyes Screensaver -->
+<div class="idle-overlay" id="idle-overlay" title="Click anywhere to return to clock">
+  <canvas id="eyes-canvas"></canvas>
 </div>
 
 <script>
@@ -559,6 +770,7 @@ class FlipCard {
 ══════════════════════════════════════ */
 const LS_MAIN = 'flipclock_main_location';
 const LS_SEC  = 'flipclock_sec_location';
+const LS_IDLE = 'flipclock_idle_settings';
 
 function lsSave(key,obj){ try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} }
 function lsLoad(key){ try{ const v=localStorage.getItem(key); return v?JSON.parse(v):null; }catch(e){ return null; } }
@@ -569,16 +781,13 @@ function lsLoad(key){ try{ const v=localStorage.getItem(key); return v?JSON.pars
 const DAYS   = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
 const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 
-// Main weather location
 let mainWeatherLat = null;
 let mainWeatherLon = null;
 let weatherLabel   = '';
 
-// Secondary clock
 let secTimezone  = 'Australia/Sydney';
 let secCityLabel = 'WOLLONGONG · AU';
 
-// ── Restore saved choices from memory ──
 const savedMain = lsLoad(LS_MAIN);
 if(savedMain){
   mainWeatherLat = savedMain.lat;
@@ -602,18 +811,12 @@ const hCards=makeCards('hours',2);
 const mCards=makeCards('minutes',2);
 const sCards=makeCards('seconds',2);
 
-// Apply saved secondary clock label to DOM
 document.getElementById('sec-city-name').textContent = secCityLabel;
 
 /* ══════════════════════════════════════
-   Main flip clock — always local time
-   (mainTimezone drives it once set)
+   Main flip clock
 ══════════════════════════════════════ */
-function getMainNow(){
-  // We always use the browser's wall clock; timezone only matters for
-  // weather display label. The flip cards show device local time.
-  return new Date();
-}
+function getMainNow(){ return new Date(); }
 
 function updateClock(){
   const now = getMainNow();
@@ -663,7 +866,7 @@ function updateSecClock(){
 }
 
 /* ══════════════════════════════════════
-   Eye toggle
+   Eye toggle (secondary clock)
 ══════════════════════════════════════ */
 const eyeOpen = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
 const eyeOff  = `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`;
@@ -685,7 +888,7 @@ setTimeout(()=>{
 },drift);
 
 /* ══════════════════════════════════════
-   Weather — Open-Meteo (no API key)
+   Weather — Open-Meteo
 ══════════════════════════════════════ */
 const WMO_ICON={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'❄️',73:'❄️',75:'❄️',77:'❄️',80:'🌦️',81:'🌦️',82:'🌧️',95:'⛈️',96:'⛈️',99:'⛈️'};
 const WMO_DESC={0:'CLEAR SKY',1:'MAINLY CLEAR',2:'PARTLY CLOUDY',3:'OVERCAST',45:'FOGGY',48:'FREEZING FOG',51:'LIGHT DRIZZLE',53:'DRIZZLE',55:'HEAVY DRIZZLE',61:'LIGHT RAIN',63:'RAIN',65:'HEAVY RAIN',71:'LIGHT SNOW',73:'SNOW',75:'HEAVY SNOW',77:'SNOW GRAINS',80:'LIGHT SHOWERS',81:'SHOWERS',82:'HEAVY SHOWERS',85:'SNOW SHOWERS',86:'HEAVY SNOW SHOWERS',95:'THUNDERSTORM',96:'THUNDERSTORM + HAIL',99:'HEAVY THUNDERSTORM'};
@@ -719,12 +922,10 @@ function showSetLocationPrompt(){
 
 function loadWeather(){
   if(mainWeatherLat!==null){
-    // We have a saved location — use it
     fetchWeather(mainWeatherLat,mainWeatherLon,weatherLabel).catch(()=>{
       document.getElementById('weather-row').textContent='WEATHER UNAVAILABLE';
     });
   } else {
-    // No saved location — show prompt
     showSetLocationPrompt();
   }
 }
@@ -734,12 +935,10 @@ setInterval(()=>{
   if(mainWeatherLat!==null) loadWeather();
 },10*60*1000);
 
-// Click weather row to re-pick location
 document.getElementById('weather-row').addEventListener('click',()=>openModal('main'));
 
 /* ══════════════════════════════════════
    City search modal
-   mode: 'main' (weather/location) or 'sec' (secondary clock)
 ══════════════════════════════════════ */
 let modalMode = 'sec';
 
@@ -764,7 +963,6 @@ document.getElementById('modal-overlay').addEventListener('click',e=>{
   if(e.target===document.getElementById('modal-overlay')) closeModal();
 });
 
-/* Search using Open-Meteo geocoding (free, no key) */
 async function searchCity(query){
   const status=document.getElementById('modal-status');
   const results=document.getElementById('modal-results');
@@ -801,7 +999,6 @@ function selectPlace(place){
     mainWeatherLat=place.latitude;
     mainWeatherLon=place.longitude;
     weatherLabel=label;
-    // Save to memory — persists across sessions
     lsSave(LS_MAIN,{ lat:mainWeatherLat, lon:mainWeatherLon, label:weatherLabel });
     fetchWeather(mainWeatherLat,mainWeatherLon,weatherLabel).catch(()=>{
       document.getElementById('weather-row').textContent='WEATHER UNAVAILABLE';
@@ -809,7 +1006,6 @@ function selectPlace(place){
   } else {
     secTimezone=tz;
     secCityLabel=label;
-    // Save to memory — persists across sessions
     lsSave(LS_SEC,{ tz:secTimezone, label:secCityLabel });
     document.getElementById('sec-city-name').textContent=label;
     updateSecClock();
@@ -817,7 +1013,6 @@ function selectPlace(place){
   closeModal();
 }
 
-/* Search on Enter or button click */
 function doSearch(){
   const q=document.getElementById('modal-input').value.trim();
   if(q.length<2) return;
@@ -828,6 +1023,270 @@ document.getElementById('modal-input').addEventListener('keydown',e=>{
   if(e.key==='Enter') doSearch();
   if(e.key==='Escape') closeModal();
 });
+
+/* ══════════════════════════════════════
+   Idle Pixel Eyes Settings & Engine
+══════════════════════════════════════ */
+let idleConfig = Object.assign({
+  enabled: true,
+  minutes: 10,
+  color: '#ffffff'
+}, lsLoad(LS_IDLE) || {});
+
+const settingsOverlay = document.getElementById('settings-overlay');
+const idleOverlay     = document.getElementById('idle-overlay');
+const canvas          = document.getElementById('eyes-canvas');
+const ctx             = canvas.getContext('2d');
+
+// Settings Modal Handlers
+document.getElementById('gear-btn').addEventListener('click', () => {
+  document.getElementById('set-idle-enabled').checked = idleConfig.enabled;
+  document.getElementById('set-idle-mins').value      = idleConfig.minutes;
+  document.getElementById('set-idle-color').value     = idleConfig.color;
+  settingsOverlay.classList.add('open');
+});
+
+function closeSettings() {
+  settingsOverlay.classList.remove('open');
+}
+
+document.getElementById('settings-cancel').addEventListener('click', closeSettings);
+settingsOverlay.addEventListener('click', e => {
+  if (e.target === settingsOverlay) closeSettings();
+});
+
+document.getElementById('settings-save').addEventListener('click', () => {
+  const enabled = document.getElementById('set-idle-enabled').checked;
+  let mins = parseFloat(document.getElementById('set-idle-mins').value);
+  if (isNaN(mins) || mins <= 0) mins = 10;
+  const color = document.getElementById('set-idle-color').value || '#ffffff';
+
+  idleConfig = { enabled, minutes: mins, color };
+  lsSave(LS_IDLE, idleConfig);
+  closeSettings();
+  resetIdleTimer();
+});
+
+/* ── Idle Timer Logic ── */
+let idleTimeout = null;
+let isIdleActive = false;
+
+function resetIdleTimer() {
+  clearTimeout(idleTimeout);
+  if (isIdleActive) return;
+  if (!idleConfig.enabled) return;
+
+  const ms = idleConfig.minutes * 60 * 1000;
+  idleTimeout = setTimeout(startIdleEyes, ms);
+}
+
+// Listen for user activity while on the clock to reset countdown
+['mousemove', 'mousedown', 'keydown', 'touchstart', 'wheel'].forEach(evt => {
+  window.addEventListener(evt, () => {
+    if (!isIdleActive) resetIdleTimer();
+  }, { passive: true });
+});
+
+// Clicking anywhere on the idle screen closes eyes and returns to clock
+idleOverlay.addEventListener('click', stopIdleEyes);
+
+/* ── Pixel Art Eyes Renderer (LED Matrix Style) ── */
+let animTimeout = null;
+let eyeState = {
+  lookX: 0,      // -2 to +2 pixels
+  lookY: 0,      // -1 to +1 pixels
+  blink: 0,      // 0 = open, 1 = half, 2 = closed
+  happy: false   // true = ^ ^ cute squint
+};
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  if (isIdleActive) drawEyes();
+}
+window.addEventListener('resize', resizeCanvas);
+
+function drawEyes() {
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, w, h);
+
+  // Virtual LED grid: 36 columns x 18 rows
+  const cols = 36;
+  const rows = 18;
+  const cellSize = Math.min(w / cols, h / rows);
+  const gap = Math.max(2, cellSize * 0.14); // LED matrix gap
+  const pixelSize = cellSize - gap;
+
+  const offsetX = (w - cols * cellSize) / 2;
+  const offsetY = (h - rows * cellSize) / 2;
+
+  // Helper to light up a pixel with subtle LED glow
+  function drawPixel(gx, gy, alpha = 1) {
+    if (gx < 0 || gx >= cols || gy < 0 || gy >= rows) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = idleConfig.color;
+    ctx.shadowColor = idleConfig.color;
+    ctx.shadowBlur = cellSize * 0.35;
+    const px = offsetX + gx * cellSize + gap / 2;
+    const py = offsetY + gy * cellSize + gap / 2;
+    const r = Math.max(2, pixelSize * 0.18);
+    ctx.beginPath();
+    ctx.roundRect(px, py, pixelSize, pixelSize, r);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Draw one eye centered around (cx, cy), size 9w x 10h
+  function renderSingleEye(cx, cy) {
+    if (eyeState.happy) {
+      // Cute ^ ^ pixel arc
+      const arc = [
+        [-4, 1], [-3, 0], [-2, -1], [-1, -2], [0, -2], [1, -2], [2, -1], [3, 0], [4, 1],
+        [-4, 2], [-3, 1], [-2, 0],  [-1, -1], [0, -1], [1, -1], [2, 0],  [3, 1], [4, 2]
+      ];
+      arc.forEach(([dx, dy]) => drawPixel(cx + dx, cy + dy));
+      return;
+    }
+
+    if (eyeState.blink === 2) {
+      // Closed flat line
+      for (let dx = -4; dx <= 4; dx++) {
+        drawPixel(cx + dx, cy + 1);
+      }
+      return;
+    }
+
+    // Eye white/sclera shape (9 wide, 10 tall, rounded corners)
+    const topY = eyeState.blink === 1 ? -1 : -4;
+    const botY = 4;
+
+    // Pupil 3x4 block shifted by lookX, lookY
+    const pxCenter = eyeState.lookX;
+    const pyCenter = (eyeState.blink === 1 ? 1 : 0) + eyeState.lookY;
+
+    for (let dy = topY; dy <= botY; dy++) {
+      for (let dx = -4; dx <= 4; dx++) {
+        // Round off the 4 outer corners
+        const isCorner = (Math.abs(dx) === 4 && (dy === topY || dy === botY));
+        if (isCorner) continue;
+
+        // Cut out dark pupil inside the bright anime eye
+        const inPupilX = dx >= pxCenter - 1 && dx <= pxCenter + 1;
+        const inPupilY = dy >= pyCenter - 1 && dy <= pyCenter + 2;
+
+        // Cute anime specular highlight pixel inside the pupil
+        const isHighlight = (dx === pxCenter - 1 && dy === pyCenter - 1);
+
+        if (inPupilX && inPupilY && !isHighlight) {
+          // Leave pupil dark (unlit LED) for that cute retro anime look
+          continue;
+        }
+
+        drawPixel(cx + dx, cy + dy);
+      }
+    }
+  }
+
+  // Left eye at x=10, Right eye at x=25, vertically centered at y=9
+  renderSingleEye(10, 9);
+  renderSingleEye(25, 9);
+}
+
+function scheduleNextBehavior() {
+  if (!isIdleActive) return;
+
+  const roll = Math.random();
+
+  if (roll < 0.45) {
+    // Normal single or double blink
+    eyeState.happy = false;
+    eyeState.blink = 1;
+    drawEyes();
+    setTimeout(() => {
+      if (!isIdleActive) return;
+      eyeState.blink = 2;
+      drawEyes();
+      setTimeout(() => {
+        if (!isIdleActive) return;
+        eyeState.blink = 0;
+        drawEyes();
+
+        // 30% chance of a cute double-blink
+        if (Math.random() < 0.3) {
+          setTimeout(() => {
+            if (!isIdleActive) return;
+            eyeState.blink = 2;
+            drawEyes();
+            setTimeout(() => {
+              if (!isIdleActive) return;
+              eyeState.blink = 0;
+              drawEyes();
+              animTimeout = setTimeout(scheduleNextBehavior, 2000 + Math.random() * 3500);
+            }, 110);
+          }, 140);
+        } else {
+          animTimeout = setTimeout(scheduleNextBehavior, 2000 + Math.random() * 3500);
+        }
+      }, 120);
+    }, 60);
+
+  } else if (roll < 0.85) {
+    // Look around (left, right, up-left, up-right, or back to center)
+    eyeState.happy = false;
+    eyeState.blink = 0;
+    const dirs = [
+      { x: -2, y: 0 },
+      { x:  2, y: 0 },
+      { x: -2, y: -1 },
+      { x:  2, y: -1 },
+      { x:  0, y: 0 }
+    ];
+    const pick = dirs[Math.floor(Math.random() * dirs.length)];
+    eyeState.lookX = pick.x;
+    eyeState.lookY = pick.y;
+    drawEyes();
+    animTimeout = setTimeout(scheduleNextBehavior, 1500 + Math.random() * 2500);
+
+  } else {
+    // Cute ^ ^ happy squint for 1.8 seconds
+    eyeState.lookX = 0;
+    eyeState.lookY = 0;
+    eyeState.blink = 0;
+    eyeState.happy = true;
+    drawEyes();
+    setTimeout(() => {
+      if (!isIdleActive) return;
+      eyeState.happy = false;
+      drawEyes();
+      animTimeout = setTimeout(scheduleNextBehavior, 2500 + Math.random() * 3000);
+    }, 1800);
+  }
+}
+
+function startIdleEyes() {
+  if (isIdleActive) return;
+  isIdleActive = true;
+  closeModal();
+  closeSettings();
+  resizeCanvas();
+  eyeState = { lookX: 0, lookY: 0, blink: 0, happy: false };
+  drawEyes();
+  idleOverlay.classList.add('active');
+  animTimeout = setTimeout(scheduleNextBehavior, 1800);
+}
+
+function stopIdleEyes() {
+  isIdleActive = false;
+  clearTimeout(animTimeout);
+  idleOverlay.classList.remove('active');
+  resetIdleTimer();
+}
+
+// Kick off initial idle timer
+resetIdleTimer();
 </script>
 </body>
 </html>
