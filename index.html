@@ -1154,7 +1154,7 @@ function schedulePeriodicPixelClock() {
   const intervalMs = idleConfig.clockIntervalMins * 60 * 1000;
   periodicClockTimer = setTimeout(() => {
     if (!isIdleActive) return;
-    if (!clockModeActive) {
+    if (!clockModeActive && bouncePhase === 'none') {
       startPixelClockSequence();
     }
     schedulePeriodicPixelClock();
@@ -1191,7 +1191,7 @@ function updateGazeFromPointer(clientX, clientY) {
   clearFightSleepTimers();
 
   // Dismiss pixel clock if user moves pointer directly over the 10" window
-  if (clockModeActive) {
+  if (clockModeActive || bouncePhase !== 'none') {
     clearClockSequenceTimers();
     clockModeActive = false;
     bouncePhase = 'none';
@@ -1201,6 +1201,8 @@ function updateGazeFromPointer(clientX, clientY) {
     tgtEyeOffsetY = 0;
     eyeScaleX = 1;
     eyeScaleY = 1;
+    curBlink = 0;
+    tgtBlink = 0;
     clearTimeout(behaviorTimer);
     behaviorTimer = setTimeout(scheduleNextBehavior, 1800);
   }
@@ -1235,14 +1237,13 @@ window.addEventListener('mousemove', e => {
 }, { passive: true });
 
 document.addEventListener('mouseleave', e => {
-  if (!isIdleActive || !idleConfig.trackMouse || clockModeActive) return;
+  if (!isIdleActive || !idleConfig.trackMouse || clockModeActive || bouncePhase !== 'none') return;
   lastMouseInsideTime = 0;
   clearTimeout(panToUltrawideTimer);
   clearTimeout(suspiciousGlanceTimer);
   clearFightSleepTimers();
 
   if (e.clientX <= 12) {
-    // 1. Mouse exits left -> passes through 24" monitor on upper-right first
     currentMood = 'normal';
     curBlink = 0; tgtBlink = 0;
     tgtLookX = 2;
@@ -1251,7 +1252,6 @@ document.addEventListener('mouseleave', e => {
 
     clearTimeout(behaviorTimer);
 
-    // 2. After 650ms, pan smoothly from upper-right (24") to center-up (Ultrawide)
     panToUltrawideTimer = setTimeout(() => {
       if (!isIdleActive || Date.now() >= lookUpModeUntil) return;
       tgtLookX = 0;
@@ -1287,9 +1287,6 @@ function shadeColor(hex, factor) {
 let animFrameId   = null;
 let behaviorTimer = null;
 
-// Moods:
-// 'normal' | 'happy' | 'wink' | 'joy' | 'angry' | 'confused' | 'worried'
-// 'sad' | 'bored' | 'suspicious' | 'shocked' | 'sleepy' | 'sleeping'
 let currentMood = 'normal';
 let winkEyeSide = 'right';
 let curLookX = 0, curLookY = 0;
@@ -1306,11 +1303,11 @@ let eyeScaleX = 1.0, eyeScaleY = 1.0;
 let bouncePhase = 'none'; // 'none' | 'falling' | 'squashing' | 'settling'
 let bounceCount = 0;
 let squashTimer = 0;
-const INVISIBLE_FLOOR_OFFSET = 5; // 5 grids below normal center (row 11 + 5 = 16)
+const INVISIBLE_FLOOR_OFFSET = 5;
 
 // Rising Pixel Clock State
 let clockModeActive = false;
-let curClockY = 23, tgtClockY = 23; // 23 = offscreen bottom, 7 = center screen
+let curClockY = 23, tgtClockY = 23;
 let lastClockTickSec = -1;
 
 function resizeCanvas() {
@@ -1591,9 +1588,95 @@ function drawEyes() {
   const socketShiftX = Math.abs(curLookX) >= 2 ? Math.sign(curLookX) : 0;
   const socketShiftY = Math.abs(curLookY) >= 2 ? Math.sign(curLookY) : 0;
 
-  // Only render eyes if they haven't been pushed completely off the top edge
   if (curEyeOffsetY > -21) {
     const isDeformed = Math.abs(eyeScaleX - 1) > 0.02 || Math.abs(eyeScaleY - 1) > 0.02;
+
+    function renderNormalOpenEye(scx, scy, isRightEye) {
+      let topClip = -7 + curBlink;
+      let botClip = 6 - Math.floor(curBlink * 0.45);
+
+      if (currentMood === 'bored') {
+        topClip = Math.max(topClip, -2);
+      } else if (currentMood === 'suspicious') {
+        topClip = Math.max(topClip, -1);
+        botClip = Math.min(botClip, 2);
+      } else if (currentMood === 'sleepy') {
+        topClip = Math.max(topClip, 0);
+        botClip = Math.min(botClip, 4);
+      } else if (currentMood === 'sad') {
+        botClip = Math.min(botClip, 4);
+      }
+
+      if (curBlink >= 7) {
+        const lidColor = shadeColor(idleConfig.eyeColor, 1.1);
+        for (let dx = -5; dx <= 5; dx++) {
+          lightLED(scx + dx, scy + 2, lidColor, true);
+        }
+        return;
+      }
+
+      const pcx = scx + curLookX;
+      const pcy = scy + curLookY + (currentMood === 'sad' ? 1 : 0);
+
+      for (let r = 0; r < 14; r++) {
+        const dy = r - 7;
+        if (dy < topClip || dy > botClip) continue;
+
+        const normY = r / 13;
+        const shadeFactor = 0.55 + normY * 0.87;
+        const shadedIris = shadeColor(idleConfig.eyeColor, shadeFactor);
+
+        for (let c = 0; c < 13; c++) {
+          if (SOCKET_MASK[r][c] !== '1') continue;
+          const dx = c - 6;
+
+          if (currentMood === 'sad') {
+            const outerDist = isRightEye ? dx : -dx;
+            if (dy < -4 + Math.max(0, Math.floor(outerDist / 2))) continue;
+          }
+
+          const gx = scx + dx;
+          const gy = scy + dy;
+
+          const pdx = gx - pcx;
+          const pdy = gy - pcy;
+          let inPupil = false;
+          if (currentMood === 'suspicious') {
+            inPupil = Math.abs(pdx) <= 2 && Math.abs(pdy) <= 1;
+          } else if (pdy >= -4 && pdy <= 3 && pdx >= -3 && pdx <= 3) {
+            inPupil = PUPIL_MASK[pdy + 4][pdx + 3] === '1';
+          }
+
+          const isBigHighlight = currentMood === 'suspicious'
+            ? (pdx === -2 && pdy === -1)
+            : ((pdx === -3 || pdx === -2) && (pdy === -4 || pdy === -3));
+          const isSmallHighlight = (currentMood !== 'suspicious') &&
+            ((pdx === 2 && pdy === 2) || (currentMood === 'sad' && pdx === 2 && pdy === 1));
+
+          if (isBigHighlight || isSmallHighlight) {
+            lightLED(gx, gy, '#ffffff', true);
+          } else if (inPupil) {
+            lightLED(gx, gy, idleConfig.pupilColor, false);
+          } else {
+            lightLED(gx, gy, shadedIris, true);
+          }
+        }
+      }
+
+      if (currentMood === 'bored' || currentMood === 'sleepy') {
+        const lidRow = currentMood === 'bored' ? -2 : 0;
+        const lidColor = shadeColor(idleConfig.eyeColor, 1.25);
+        for (let dx = -6; dx <= 6; dx++) {
+          lightLED(scx + dx, scy + lidRow, lidColor, true);
+        }
+      } else if (currentMood === 'suspicious') {
+        const lidColor = shadeColor(idleConfig.eyeColor, 1.3);
+        for (let dx = -6; dx <= 6; dx++) {
+          lightLED(scx + dx, scy - 2, lidColor, true);
+          lightLED(scx + dx, scy + 3, lidColor, true);
+        }
+      }
+    }
 
     function renderEye(baseCx, baseCy, isRightEye) {
       const scx = baseCx + socketShiftX;
@@ -1628,7 +1711,6 @@ function drawEyes() {
             const pdy = (gy - pcy) / pry;
             const inPupil = (pdx * pdx + pdy * pdy) <= 1.0;
 
-            // Specular highlight scales smoothly with the eye
             const h1x = Math.round(pcx - 2 * eyeScaleX);
             const h1y = Math.round(pcy - 3 * eyeScaleY);
             const isHighlight = (Math.abs(gx - h1x) <= 0.6 && Math.abs(gy - h1y) <= 0.6);
@@ -1754,7 +1836,7 @@ function drawEyes() {
         return;
       }
 
-      /* ── 6. WINK (One eye closed arch, other eye open) ── */
+      /* ── 6. WINK (Self-contained: one arch + one guaranteed wide-open eye) ── */
       if (currentMood === 'wink') {
         const isClosedEye = (isRightEye && winkEyeSide === 'right') || (!isRightEye && winkEyeSide === 'left');
         if (isClosedEye) {
@@ -1766,8 +1848,11 @@ function drawEyes() {
               }
             }
           }
-          return;
+        } else {
+          curBlink = 0;
+          renderNormalOpenEye(scx, scy, isRightEye);
         }
+        return;
       }
 
       /* ── 7. SLEEPING (Peaceful curved closed lids + floating Zzz) ── */
@@ -1830,90 +1915,7 @@ function drawEyes() {
       }
 
       /* ── 9. NORMAL / BLINK / SAD / BORED / SUSPICIOUS / SLEEPY ── */
-      let topClip = -7 + curBlink;
-      let botClip = 6 - Math.floor(curBlink * 0.45);
-
-      if (currentMood === 'bored') {
-        topClip = Math.max(topClip, -2);
-      } else if (currentMood === 'suspicious') {
-        topClip = Math.max(topClip, -1);
-        botClip = Math.min(botClip, 2);
-      } else if (currentMood === 'sleepy') {
-        topClip = Math.max(topClip, 0);
-        botClip = Math.min(botClip, 4);
-      } else if (currentMood === 'sad') {
-        botClip = Math.min(botClip, 4);
-      }
-
-      if (curBlink >= 7) {
-        const lidColor = shadeColor(idleConfig.eyeColor, 1.1);
-        for (let dx = -5; dx <= 5; dx++) {
-          lightLED(scx + dx, scy + 2, lidColor, true);
-        }
-        return;
-      }
-
-      const pcx = scx + curLookX;
-      const pcy = scy + curLookY + (currentMood === 'sad' ? 1 : 0);
-
-      for (let r = 0; r < 14; r++) {
-        const dy = r - 7;
-        if (dy < topClip || dy > botClip) continue;
-
-        const normY = r / 13;
-        const shadeFactor = 0.55 + normY * 0.87;
-        const shadedIris = shadeColor(idleConfig.eyeColor, shadeFactor);
-
-        for (let c = 0; c < 13; c++) {
-          if (SOCKET_MASK[r][c] !== '1') continue;
-          const dx = c - 6;
-
-          if (currentMood === 'sad') {
-            const outerDist = isRightEye ? dx : -dx;
-            if (dy < -4 + Math.max(0, Math.floor(outerDist / 2))) continue;
-          }
-
-          const gx = scx + dx;
-          const gy = scy + dy;
-
-          const pdx = gx - pcx;
-          const pdy = gy - pcy;
-          let inPupil = false;
-          if (currentMood === 'suspicious') {
-            inPupil = Math.abs(pdx) <= 2 && Math.abs(pdy) <= 1;
-          } else if (pdy >= -4 && pdy <= 3 && pdx >= -3 && pdx <= 3) {
-            inPupil = PUPIL_MASK[pdy + 4][pdx + 3] === '1';
-          }
-
-          const isBigHighlight = currentMood === 'suspicious'
-            ? (pdx === -2 && pdy === -1)
-            : ((pdx === -3 || pdx === -2) && (pdy === -4 || pdy === -3));
-          const isSmallHighlight = (currentMood !== 'suspicious') &&
-            ((pdx === 2 && pdy === 2) || (currentMood === 'sad' && pdx === 2 && pdy === 1));
-
-          if (isBigHighlight || isSmallHighlight) {
-            lightLED(gx, gy, '#ffffff', true);
-          } else if (inPupil) {
-            lightLED(gx, gy, idleConfig.pupilColor, false);
-          } else {
-            lightLED(gx, gy, shadedIris, true);
-          }
-        }
-      }
-
-      if (currentMood === 'bored' || currentMood === 'sleepy') {
-        const lidRow = currentMood === 'bored' ? -2 : 0;
-        const lidColor = shadeColor(idleConfig.eyeColor, 1.25);
-        for (let dx = -6; dx <= 6; dx++) {
-          lightLED(scx + dx, scy + lidRow, lidColor, true);
-        }
-      } else if (currentMood === 'suspicious') {
-        const lidColor = shadeColor(idleConfig.eyeColor, 1.3);
-        for (let dx = -6; dx <= 6; dx++) {
-          lightLED(scx + dx, scy - 2, lidColor, true);
-          lightLED(scx + dx, scy + 3, lidColor, true);
-        }
-      }
+      renderNormalOpenEye(scx, scy, isRightEye);
     }
 
     renderEye(12, 11, false);
@@ -1992,66 +1994,69 @@ function animationLoop(timestamp) {
     needsDraw = true;
 
     if (bouncePhase === 'falling') {
-      const gravity = 145; // grid units / sec^2
+      const gravity = 145;
       eyeVelY += gravity * dt;
       curEyeOffsetY += eyeVelY * dt;
 
-      // Velocity-based vertical stretch (Frames 6 -> 7 -> 8)
       const speedRatio = Math.min(1, Math.abs(eyeVelY) / 58);
       eyeScaleY = 1.0 + speedRatio * 0.46;
       eyeScaleX = 1.0 - speedRatio * 0.22;
 
-      // Hit the invisible floor (+5 grids below normal center)
       if (curEyeOffsetY >= INVISIBLE_FLOOR_OFFSET) {
         curEyeOffsetY = INVISIBLE_FLOOR_OFFSET;
         bounceCount++;
         bouncePhase = 'squashing';
         squashTimer = bounceCount === 1 ? 0.085 : 0.065;
 
-        // Frame 9: Impact squash flat against the invisible floor!
         const impactIntensity = bounceCount === 1 ? 1.0 : 0.55;
         eyeScaleX = 1.0 + 0.38 * impactIntensity;
         eyeScaleY = 1.0 - 0.36 * impactIntensity;
-        // Shift center slightly downward so bottom of squashed eye stays planted on floor
         curEyeOffsetY = INVISIBLE_FLOOR_OFFSET + 6.6 * (1 - eyeScaleY);
       }
     } else if (bouncePhase === 'squashing') {
       squashTimer -= dt;
       if (squashTimer <= 0) {
         if (bounceCount === 1) {
-          // First rebound off the invisible floor upward
           curEyeOffsetY = INVISIBLE_FLOOR_OFFSET;
           eyeVelY = -36;
           bouncePhase = 'falling';
         } else if (bounceCount === 2) {
-          // Second smaller hop off the invisible floor
           curEyeOffsetY = INVISIBLE_FLOOR_OFFSET;
           eyeVelY = -20;
           bouncePhase = 'falling';
         } else {
-          // Final impact -> smoothly spring back up to resting center (0)
           bouncePhase = 'settling';
         }
       }
     } else if (bouncePhase === 'settling') {
-      // Smooth spring return to center (0) and 1.0x1.0 proportions
       curEyeOffsetY += (0 - curEyeOffsetY) * Math.min(1, dt * 16);
       eyeScaleX += (1.0 - eyeScaleX) * Math.min(1, dt * 18);
       eyeScaleY += (1.0 - eyeScaleY) * Math.min(1, dt * 18);
 
       if (Math.abs(curEyeOffsetY) < 0.08 && Math.abs(eyeScaleX - 1) < 0.015) {
+        // Hard reset all state cleanly when landing completes
         curEyeOffsetY = 0;
         tgtEyeOffsetY = 0;
+        eyeVelY = 0;
         eyeScaleX = 1.0;
         eyeScaleY = 1.0;
+        curBlink = 0;
+        tgtBlink = 0;
+        curLookX = 0;
+        tgtLookX = 0;
+        curLookY = 0;
+        tgtLookY = 0;
         bouncePhase = 'none';
         clockModeActive = false;
 
-        // Happy victory reaction after landing cleanly!
         currentMood = 'happy';
+        drawEyes();
+        clearTimeout(behaviorTimer);
         clockSequenceTimers.push(setTimeout(() => {
           if (!isIdleActive) return;
           currentMood = 'normal';
+          curBlink = 0;
+          tgtBlink = 0;
           drawEyes();
           behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2000);
         }, 1600));
@@ -2117,7 +2122,7 @@ function animationLoop(timestamp) {
 const NON_BLINK_MOODS = ['happy', 'joy', 'angry', 'confused', 'worried', 'wink', 'sleeping', 'shocked'];
 
 function triggerBlink(doubleBlink = false) {
-  if (!isIdleActive || NON_BLINK_MOODS.includes(currentMood) || clockModeActive) return;
+  if (!isIdleActive || NON_BLINK_MOODS.includes(currentMood) || clockModeActive || bouncePhase !== 'none') return;
   tgtBlink = 7;
 
   setTimeout(() => {
@@ -2137,12 +2142,7 @@ function triggerBlink(doubleBlink = false) {
   }, 170);
 }
 
-/* ── Pixel Clock Takeover Sequence:
-   1. Clock rises from bottom & pushes eyes completely off the top edge
-   2. Clock stays centered alone for 12 seconds
-   3. Screen turns completely black (blank)
-   4. Eyes drop from the top with fluid squash-and-stretch physics, bounce off
-      the invisible floor (+5 grids below center), and spring back to center! ── */
+/* ── Pixel Clock Takeover Sequence ── */
 function startPixelClockSequence() {
   clearClockSequenceTimers();
   clearFightSleepTimers();
@@ -2157,14 +2157,12 @@ function startPixelClockSequence() {
   curBlink = 0;
   tgtBlink = 0;
 
-  // Stage 1: Clock peeks from bottom; eyes look down in alarm
   currentMood = 'normal';
   tgtLookX = 0;
   tgtLookY = 2;
   curClockY = 22;
   tgtClockY = 17;
 
-  // Stage 2: Clock rises to center (row 7) and shoves eyes completely off-screen top (-22)
   clockSequenceTimers.push(setTimeout(() => {
     if (!isIdleActive || !clockModeActive) return;
     currentMood = 'angry';
@@ -2173,7 +2171,6 @@ function startPixelClockSequence() {
     drawEyes();
   }, 550));
 
-  // Stage 3: After 12 seconds, clock vanishes -> screen goes completely blank (black)
   const clockDisplayDurationMs = 12000;
   clockSequenceTimers.push(setTimeout(() => {
     if (!isIdleActive || !clockModeActive) return;
@@ -2186,7 +2183,6 @@ function startPixelClockSequence() {
     tgtLookY = 0;
     drawEyes();
 
-    // Stage 4: After 550ms of blank screen, trigger fluid gravity fall & invisible floor bounce!
     clockSequenceTimers.push(setTimeout(() => {
       if (!isIdleActive || !clockModeActive) return;
       curEyeOffsetY = -19;
@@ -2246,14 +2242,12 @@ function scheduleNextBehavior() {
   const inLookUpMode = Date.now() < lookUpModeUntil;
   const roll = Math.random();
 
-  // 1. If cursor is actively moving inside this window, blink while tracking pointer
   if (pointerActiveInside) {
     triggerBlink(Math.random() < 0.30);
     behaviorTimer = setTimeout(scheduleNextBehavior, 2200 + Math.random() * 2800);
     return;
   }
 
-  // 2. If cursor exited left edge -> settled on Ultrawide (center-up)
   if (inLookUpMode) {
     if (roll < 0.38) {
       triggerBlink(Math.random() < 0.30);
@@ -2287,7 +2281,6 @@ function scheduleNextBehavior() {
     return;
   }
 
-  // 3. Expressive Moods Mode (Weighted so 'shocked' is rare)
   if (idleConfig.expressive && roll >= 0.48) {
     const weightedMoods = [
       { mood: 'happy',      weight: 10 },
@@ -2360,6 +2353,8 @@ function scheduleNextBehavior() {
     behaviorTimer = setTimeout(() => {
       if (!isIdleActive) return;
       currentMood = 'normal';
+      curBlink = 0;
+      tgtBlink = 0;
       tgtLookX = 0;
       tgtLookY = 0;
       drawEyes();
@@ -2368,8 +2363,9 @@ function scheduleNextBehavior() {
     return;
   }
 
-  // 4. Calm / Default Idle Behavior (Blinking & Looking Around)
   currentMood = 'normal';
+  curBlink = 0;
+  tgtBlink = 0;
   if (roll < 0.22) {
     triggerBlink(Math.random() < 0.30);
     behaviorTimer = setTimeout(scheduleNextBehavior, 2200 + Math.random() * 2800);
