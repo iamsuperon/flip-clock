@@ -700,7 +700,7 @@ input:checked + .slider:before { transform: translateX(115%); background-color: 
     <div class="setting-row">
       <div>
         <div class="setting-label">FOLLOW MOUSE IN WINDOW</div>
-        <div class="setting-sub">TRACK CURSOR &amp; LOOK UP ON LEFT EXIT</div>
+        <div class="setting-sub">TRACK CURSOR &amp; FOLLOW LEFT EXIT UP</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="set-idle-track">
@@ -1110,6 +1110,7 @@ let idleTimeout = null;
 let isIdleActive = false;
 let lastMouseInsideTime = 0;
 let lookUpModeUntil = 0;
+let panToUltrawideTimer = null;
 
 function resetIdleTimer() {
   clearTimeout(idleTimeout);
@@ -1135,7 +1136,9 @@ window.addEventListener('keydown', () => {
 function updateGazeFromPointer(clientX, clientY) {
   if (!isIdleActive || !idleConfig.trackMouse) return;
 
+  // Cancel any upper-monitor sequence as soon as pointer comes back into the 10" window
   lookUpModeUntil = 0;
+  clearTimeout(panToUltrawideTimer);
   if (currentMood !== 'normal') {
     currentMood = 'normal';
   }
@@ -1166,15 +1169,24 @@ window.addEventListener('mousemove', e => {
 document.addEventListener('mouseleave', e => {
   if (!isIdleActive || !idleConfig.trackMouse) return;
   lastMouseInsideTime = 0;
+  clearTimeout(panToUltrawideTimer);
 
   if (e.clientX <= 12) {
-    // Exited left edge: look up and run 30s simulated look-up cycle
+    // 1. Mouse exits left -> passes through 24" monitor on upper-right first
     currentMood = 'normal';
+    tgtLookX = 2;
     tgtLookY = -2;
-    tgtLookX = -1;
-    lookUpModeUntil = Date.now() + 30000;
+    lookUpModeUntil = Date.now() + 30000; // Watch upper monitor for 30s before reverting to normal idle
+
     clearTimeout(behaviorTimer);
-    behaviorTimer = setTimeout(scheduleNextBehavior, 1200);
+
+    // 2. After 650ms, pan smoothly from upper-right (24") to center-up (Ultrawide)
+    panToUltrawideTimer = setTimeout(() => {
+      if (!isIdleActive || Date.now() >= lookUpModeUntil) return;
+      tgtLookX = 0;
+      tgtLookY = -2;
+      behaviorTimer = setTimeout(scheduleNextBehavior, 1800);
+    }, 650);
   } else {
     lookUpModeUntil = 0;
     clearTimeout(behaviorTimer);
@@ -1210,7 +1222,7 @@ let curLookX = 0, curLookY = 0;
 let tgtLookX = 0, tgtLookY = 0;
 let curBlink = 0, tgtBlink = 0;
 let lastStepTime = 0;
-let zzzTick = 0; // Animates floating Zzz particles when sleeping
+let zzzTick = 0;
 
 function resizeCanvas() {
   canvas.width = window.innerWidth;
@@ -1304,7 +1316,6 @@ function drawEyes() {
   const offsetX = (w - cols * cellSize) / 2;
   const offsetY = (h - rows * cellSize) / 2;
 
-  // Faint unlit LED matrix background
   ctx.fillStyle = '#151515';
   for (let gy = 0; gy < rows; gy++) {
     for (let gx = 0; gx < cols; gx++) {
@@ -1332,7 +1343,6 @@ function drawEyes() {
     ctx.restore();
   }
 
-  // Socket only shifts by 1 grid when pupil reaches far edge (|look| >= 2)
   const socketShiftX = Math.abs(curLookX) >= 2 ? Math.sign(curLookX) : 0;
   const socketShiftY = Math.abs(curLookY) >= 2 ? Math.sign(curLookY) : 0;
 
@@ -1363,18 +1373,15 @@ function drawEyes() {
     /* ── 2. SLEEPING (Peaceful curved closed lids + floating Zzz) ── */
     if (currentMood === 'sleeping') {
       const sleepColor = shadeColor(idleConfig.eyeColor, 0.95);
-      // Gentle U-shaped closed eyelid
       const sleepLid = [
         [-5, 1], [-4, 2], [-3, 2], [-2, 3], [-1, 3], [0, 3], [1, 3], [2, 3], [3, 2], [4, 2], [5, 1],
         [-4, 1], [4, 1]
       ];
       sleepLid.forEach(([dx, dy]) => lightLED(baseCx + dx, baseCy + dy, sleepColor, true));
 
-      // Draw animated floating Z's on the right side once (when rendering right eye)
       if (isRightEye) {
         const floatOffset = Math.floor(zzzTick % 3);
         const zColor = shadeColor(idleConfig.eyeColor, 1.3);
-        // Big Z
         for (let zr = 0; zr < 5; zr++) {
           for (let zc = 0; zc < 5; zc++) {
             if (Z_GLYPH[zr][zc] === '1') {
@@ -1382,7 +1389,6 @@ function drawEyes() {
             }
           }
         }
-        // Small z
         const smallZ = [
           [0,0],[1,0],[2,0],
           [1,1],
@@ -1408,7 +1414,6 @@ function drawEyes() {
           const gx = baseCx + dx + jitterX;
           const gy = baseCy + dy;
 
-          // Tiny 3x3 contracted pupil in center
           const inTinyPupil = Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
           const isSparkle = (dx === -2 && dy === -2);
 
@@ -1429,15 +1434,14 @@ function drawEyes() {
     let botClip = 6 - Math.floor(curBlink * 0.45);
 
     if (currentMood === 'bored') {
-      topClip = Math.max(topClip, -2); // Half-lidded flat top
+      topClip = Math.max(topClip, -2);
     } else if (currentMood === 'sleepy') {
-      topClip = Math.max(topClip, 0);  // Very heavy droopy top lid
+      topClip = Math.max(topClip, 0);
       botClip = Math.min(botClip, 4);
     } else if (currentMood === 'sad') {
-      botClip = Math.min(botClip, 4);  // Slightly raised lower lid
+      botClip = Math.min(botClip, 4);
     }
 
-    // Fully closed eyelid line
     if (curBlink >= 7) {
       const lidColor = shadeColor(idleConfig.eyeColor, 1.1);
       for (let dx = -5; dx <= 5; dx++) {
@@ -1461,7 +1465,6 @@ function drawEyes() {
         if (SOCKET_MASK[r][c] !== '1') continue;
         const dx = c - 6;
 
-        // Sad expression slopes outer top corners downward like worried puppy eyes
         if (currentMood === 'sad') {
           const outerDist = isRightEye ? dx : -dx;
           if (dy < -4 + Math.max(0, Math.floor(outerDist / 2))) continue;
@@ -1490,7 +1493,6 @@ function drawEyes() {
       }
     }
 
-    // Flat heavy top lid bar for Bored / Sleepy
     if (currentMood === 'bored' || currentMood === 'sleepy') {
       const lidRow = currentMood === 'bored' ? -2 : 0;
       const lidColor = shadeColor(idleConfig.eyeColor, 1.25);
@@ -1510,7 +1512,6 @@ let lastZzzTime = 0;
 function animationLoop(timestamp) {
   if (!isIdleActive) return;
 
-  // Step grid coordinates every 45ms
   if (timestamp - lastStepTime >= 45) {
     lastStepTime = timestamp;
     let changed = false;
@@ -1536,7 +1537,6 @@ function animationLoop(timestamp) {
     if (changed) drawEyes();
   }
 
-  // Animate Zzz / Shocked tremor every 420ms
   if ((currentMood === 'sleeping' || currentMood === 'shocked') && timestamp - lastZzzTime >= 420) {
     lastZzzTime = timestamp;
     zzzTick++;
@@ -1583,24 +1583,24 @@ function scheduleNextBehavior() {
     return;
   }
 
-  // 2. If cursor exited left edge -> simulated "looking up left & right" + blinking + happy eyes
+  // 2. If cursor exited left edge -> settled on Ultrawide (center-up) with slight horizontal scans, blinking & happy eyes
   if (inLookUpMode) {
-    if (roll < 0.35) {
+    if (roll < 0.38) {
       triggerBlink(Math.random() < 0.30);
       behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
-    } else if (roll < 0.82) {
+    } else if (roll < 0.84) {
       currentMood = 'normal';
-      const upMoves = [
-        { x: -2, y: -2 },
-        { x: -1, y: -2 },
+      // Mostly center-up (Ultrawide) with occasional glances slightly left/right on the ultrawide
+      const ultrawideMoves = [
         { x:  0, y: -2 },
-        { x:  1, y: -2 },
-        { x:  2, y: -2 }
+        { x:  0, y: -2 },
+        { x: -1, y: -2 },
+        { x:  1, y: -2 }
       ];
-      const pick = upMoves[Math.floor(Math.random() * upMoves.length)];
+      const pick = ultrawideMoves[Math.floor(Math.random() * ultrawideMoves.length)];
       tgtLookX = pick.x;
       tgtLookY = pick.y;
-      behaviorTimer = setTimeout(scheduleNextBehavior, 1400 + Math.random() * 1800);
+      behaviorTimer = setTimeout(scheduleNextBehavior, 1500 + Math.random() * 2000);
     } else {
       tgtLookX = 0; tgtLookY = 0;
       curLookX = 0; curLookY = 0;
@@ -1609,6 +1609,7 @@ function scheduleNextBehavior() {
       setTimeout(() => {
         if (!isIdleActive) return;
         currentMood = 'normal';
+        tgtLookX = 0;
         tgtLookY = -2;
         drawEyes();
         behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2000);
@@ -1625,15 +1626,12 @@ function scheduleNextBehavior() {
     curBlink = 0; tgtBlink = 0;
 
     if (chosenMood === 'bored') {
-      // Bored side-eye glance
       tgtLookX = Math.random() < 0.5 ? -2 : 2;
       tgtLookY = 0;
     } else if (chosenMood === 'sad') {
-      // Sad downward puppy glance
       tgtLookX = Math.random() < 0.5 ? -1 : 1;
       tgtLookY = 1;
     } else if (chosenMood === 'sleepy') {
-      // Heavy eyes looking slightly down
       tgtLookX = 0;
       tgtLookY = 1;
     } else {
@@ -1643,7 +1641,6 @@ function scheduleNextBehavior() {
 
     drawEyes();
 
-    // Hold expression for 2.6 - 4.5 seconds (sleeping lasts a bit longer)
     const holdDuration = chosenMood === 'sleeping' ? 4500 : (2600 + Math.random() * 1400);
     behaviorTimer = setTimeout(() => {
       if (!isIdleActive) return;
@@ -1704,6 +1701,7 @@ function stopIdleEyes() {
   isIdleActive = false;
   cancelAnimationFrame(animFrameId);
   clearTimeout(behaviorTimer);
+  clearTimeout(panToUltrawideTimer);
   idleOverlay.classList.remove('active');
   resetIdleTimer();
 }
