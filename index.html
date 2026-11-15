@@ -1776,7 +1776,7 @@ function drawEyes() {
         return;
       }
 
-      /* ── 1. HAPPY (^ ^ + pink blush) ── */
+      /* ── 1. HAPPY (^ ^ + pink blush, NO pupils) ── */
       if (currentMood === 'happy') {
         const archColor = shadeColor(idleConfig.eyeColor, 1.35);
         for (let r = 0; r < HAPPY_ARCH.length; r++) {
@@ -1796,22 +1796,39 @@ function drawEyes() {
         return;
       }
 
-      /* ── 2. JOY DOME (Solid glowing upper semicircles) ── */
+      /* ── 2. JOY DOME (Upper semicircles WITH pupils & highlights) ── */
       if (currentMood === 'joy') {
+        const ey = Math.round(baseCy + curEyeOffsetY);
+        const pcx = Math.round(baseCx + curLookX);
+        const pcy = Math.round(ey + 1 + Math.min(0, curLookY));
         for (let r = 0; r < JOY_DOME.length; r++) {
           const normY = r / (JOY_DOME.length - 1);
           const col = shadeColor(idleConfig.eyeColor, 1.35 - normY * 0.35);
           for (let c = 0; c < JOY_DOME[r].length; c++) {
-            if (JOY_DOME[r][c] === '1') {
-              lightLED(baseCx - 6 + c, baseCy + curEyeOffsetY - 2 + r, col, true);
+            if (JOY_DOME[r][c] !== '1') continue;
+            const gx = baseCx - 6 + c;
+            const gy = ey - 2 + r;
+            const pdx = gx - pcx;
+            const pdy = gy - pcy;
+            const inPupil = (pdx * pdx) / 9 + (pdy * pdy) / 6.25 <= 1.0;
+            const isSparkle = (pdx === -1 && pdy === -1);
+            if (isSparkle) {
+              lightLED(gx, gy, '#ffffff', true);
+            } else if (inPupil) {
+              lightLED(gx, gy, idleConfig.pupilColor, false);
+            } else {
+              lightLED(gx, gy, col, true);
             }
           }
         }
         return;
       }
 
-      /* ── 3. ANGRY (Inward-slanted lower semicircles + anger mark) ── */
+      /* ── 3. ANGRY (Inward-slanted brow WITH pupils + anger mark) ── */
       if (currentMood === 'angry') {
+        const ey = Math.round(baseCy + curEyeOffsetY);
+        const pcx = Math.round(baseCx + curLookX);
+        const pcy = Math.round(ey + 2 + Math.max(0, curLookY));
         for (let r = 0; r < 14; r++) {
           const dy = r - 7;
           const normY = r / 13;
@@ -1822,7 +1839,21 @@ function drawEyes() {
             const innerDist = isRightEye ? dx : -dx;
             const browCut = -Math.floor((innerDist + 2) * 0.45);
             if (dy < browCut) continue;
-            lightLED(baseCx + dx, baseCy + curEyeOffsetY + dy, col, true);
+
+            const gx = baseCx + dx;
+            const gy = ey + dy;
+            const pdx = gx - pcx;
+            const pdy = gy - pcy;
+            const inPupil = Math.abs(pdx) <= 2 && Math.abs(pdy) <= 2;
+            const isGlint = (pdx === -1 && pdy === -1);
+
+            if (isGlint) {
+              lightLED(gx, gy, '#ffffff', true);
+            } else if (inPupil) {
+              lightLED(gx, gy, idleConfig.pupilColor, false);
+            } else {
+              lightLED(gx, gy, col, true);
+            }
           }
         }
         if (isRightEye && !clockModeActive) {
@@ -1838,8 +1869,11 @@ function drawEyes() {
         return;
       }
 
-      /* ── 4. CONFUSED / SKEPTICAL (Asymmetric flat + raised brow + '?') ── */
+      /* ── 4. CONFUSED / SKEPTICAL (Asymmetric brow WITH pupils + '?') ── */
       if (currentMood === 'confused') {
+        const ey = Math.round(baseCy + curEyeOffsetY);
+        const pcx = Math.round(baseCx + curLookX);
+        const pcy = Math.round(ey + 1);
         for (let r = 0; r < 14; r++) {
           const dy = r - 7;
           if (dy > 2) continue;
@@ -1850,7 +1884,21 @@ function drawEyes() {
             const dx = c - 6;
             const topLimit = isRightEye ? (-2 - Math.floor((dx + 6) / 6)) : -1;
             if (dy < topLimit) continue;
-            lightLED(baseCx + dx, baseCy + curEyeOffsetY + dy + 1, col, true);
+
+            const gx = baseCx + dx;
+            const gy = ey + dy + 1;
+            const pdx = gx - pcx;
+            const pdy = gy - pcy;
+            const inPupil = Math.abs(pdx) <= 2 && Math.abs(pdy) <= 1;
+            const isGlint = (pdx === -1 && pdy === -1);
+
+            if (isGlint) {
+              lightLED(gx, gy, '#ffffff', true);
+            } else if (inPupil) {
+              lightLED(gx, gy, idleConfig.pupilColor, false);
+            } else {
+              lightLED(gx, gy, col, true);
+            }
           }
         }
         if (isRightEye && !clockModeActive) {
@@ -1867,8 +1915,11 @@ function drawEyes() {
         return;
       }
 
-      /* ── 5. WORRIED / DOWNCAST (Outward-sloping lower semicircles) ── */
+      /* ── 5. WORRIED / DOWNCAST (Outward-sloping lids WITH pupils) ── */
       if (currentMood === 'worried') {
+        const ey = Math.round(baseCy + curEyeOffsetY);
+        const pcx = Math.round(baseCx + curLookX);
+        const pcy = Math.round(ey + 3);
         for (let r = 0; r < 14; r++) {
           const dy = r - 7;
           const normY = r / 13;
@@ -1879,7 +1930,21 @@ function drawEyes() {
             const outerDist = isRightEye ? dx : -dx;
             const lidCut = Math.floor((outerDist + 1) * 0.45);
             if (dy < lidCut) continue;
-            lightLED(baseCx + dx, baseCy + curEyeOffsetY + dy, col, true);
+
+            const gx = baseCx + dx;
+            const gy = ey + dy;
+            const pdx = gx - pcx;
+            const pdy = gy - pcy;
+            const inPupil = (pdx * pdx) / 6.25 + (pdy * pdy) / 6.25 <= 1.0;
+            const isGlint = (pdx === -1 && pdy === -1);
+
+            if (isGlint) {
+              lightLED(gx, gy, '#ffffff', true);
+            } else if (inPupil) {
+              lightLED(gx, gy, idleConfig.pupilColor, false);
+            } else {
+              lightLED(gx, gy, col, true);
+            }
           }
         }
         return;
@@ -1905,7 +1970,7 @@ function drawEyes() {
         return;
       }
 
-      /* ── 7. SLEEPING (Peaceful curved closed lids + floating Zzz) ── */
+      /* ── 7. SLEEPING (Peaceful curved closed lids + floating Zzz, NO pupils) ── */
       if (currentMood === 'sleeping') {
         const sleepColor = shadeColor(idleConfig.eyeColor, 0.95);
         const sleepLid = [
@@ -1972,7 +2037,7 @@ function drawEyes() {
     renderEye(33, 11, true);
   }
 
-  /* ── 10. RISING PIXEL DIGITAL CLOCK (Large Primary + Compact Secondary Below) ── */
+  /* ── 10. RISING PIXEL DIGITAL CLOCK (Large Primary + Centered Compact Secondary Below) ── */
   if (curClockY < rows) {
     const now = new Date();
     const rawH = now.getHours();
@@ -1982,7 +2047,6 @@ function drawEyes() {
     const ampm = rawH >= 12 ? 'PM' : 'AM';
     const colonOn = (now.getSeconds() % 2 === 0);
 
-    // Shift main clock slightly higher when secondary clock is visible so both fit cleanly
     const primaryY = secVisible ? (curClockY - 3) : curClockY;
 
     function drawClockDigit(ch, startX, startY) {
@@ -2028,7 +2092,7 @@ function drawEyes() {
       }
     });
 
-    // Secondary Clock Row Directly Below Primary Clock (if visible)
+    // Centered Secondary Clock Row Directly Below Primary Clock (if visible)
     if (secVisible) {
       try {
         const secParts = new Intl.DateTimeFormat('en-US', {
@@ -2042,9 +2106,15 @@ function drawEyes() {
         const sMin  = (secParts.find(p => p.type === 'minute')?.value || '00').padStart(2, '0');
         const sAmPm = (secParts.find(p => p.type === 'dayPeriod')?.value || 'AM').toUpperCase();
 
-        // Extract clean city code/name (up to 4 letters so "CITY HH:MM AM" fits 46 cols cleanly)
+        // Extract clean city tag (up to 4 letters)
         const rawCity = secCityLabel.split('·')[0].trim().replace(/[^A-Z]/gi, '').toUpperCase();
-        const cityTag = (rawCity.slice(0, 4) || '2ND').padEnd(4, ' ');
+        const cityTag = rawCity.slice(0, 4) || '2ND';
+
+        // Exact dynamic width calculation to center across 46 columns:
+        // cityTag (3 cols/char + 1 gap) + 2 space + HH (7) + colon (3) + MM (7) + 1 space + AMPM (7)
+        const cityWidth = cityTag.length * 4 - 1;
+        const totalWidth = cityWidth + 2 + 7 + 3 + 7 + 1 + 7;
+        const startX = Math.floor((cols - totalWidth) / 2);
 
         const secY = primaryY + 11;
         const labelCol = shadeColor(idleConfig.eyeColor, 0.62);
@@ -2062,28 +2132,38 @@ function drawEyes() {
           }
         }
 
-        // City tag (x = 4..18)
-        for (let i = 0; i < 4; i++) {
-          if (cityTag[i] !== ' ') {
-            drawMiniGlyph(cityTag[i], 4 + i * 4, secY, labelCol, false);
-          }
+        let cursorX = startX;
+
+        // City tag
+        for (let i = 0; i < cityTag.length; i++) {
+          drawMiniGlyph(cityTag[i], cursorX, secY, labelCol, false);
+          cursorX += 4;
         }
+        cursorX += 1; // 2-column gap after city tag
 
-        // Secondary HH:MM (x = 22..38)
-        drawMiniGlyph(sHour[0], 22, secY, timeCol, true);
-        drawMiniGlyph(sHour[1], 26, secY, timeCol, true);
+        // Secondary HH
+        drawMiniGlyph(sHour[0], cursorX, secY, timeCol, true);
+        cursorX += 4;
+        drawMiniGlyph(sHour[1], cursorX, secY, timeCol, true);
+        cursorX += 4;
 
+        // Colon
         if (colonOn) {
-          lightLED(30, secY + 1, timeCol, true);
-          lightLED(30, secY + 3, timeCol, true);
+          lightLED(cursorX, secY + 1, timeCol, true);
+          lightLED(cursorX, secY + 3, timeCol, true);
         }
+        cursorX += 2;
 
-        drawMiniGlyph(sMin[0], 32, secY, timeCol, true);
-        drawMiniGlyph(sMin[1], 36, secY, timeCol, true);
+        // Secondary MM
+        drawMiniGlyph(sMin[0], cursorX, secY, timeCol, true);
+        cursorX += 4;
+        drawMiniGlyph(sMin[1], cursorX, secY, timeCol, true);
+        cursorX += 4;
 
-        // Secondary AM/PM (x = 40..46)
-        drawMiniGlyph(sAmPm[0], 40, secY, labelCol, false);
-        drawMiniGlyph(sAmPm[1], 44, secY, labelCol, false);
+        // Secondary AM/PM
+        drawMiniGlyph(sAmPm[0], cursorX, secY, labelCol, false);
+        cursorX += 4;
+        drawMiniGlyph(sAmPm[1], cursorX, secY, labelCol, false);
       } catch (e) {}
     }
   }
@@ -2455,6 +2535,9 @@ function scheduleNextBehavior() {
     } else if (chosenMood === 'sleepy') {
       tgtLookX = 0;
       tgtLookY = 1;
+    } else if (chosenMood === 'angry' || chosenMood === 'confused' || chosenMood === 'joy') {
+      tgtLookX = Math.random() < 0.33 ? -1 : (Math.random() < 0.5 ? 1 : 0);
+      tgtLookY = 0;
     } else {
       tgtLookX = 0; tgtLookY = 0;
       curLookX = 0; curLookY = 0;
