@@ -382,10 +382,12 @@ body::before {
   padding: 2.5vh 2.5vw;
   width: 36vw;
   min-width: 330px;
+  max-height: 92vh;
+  overflow-y: auto;
   box-shadow: 0 4vw 8vw rgba(0,0,0,0.9);
   display: flex;
   flex-direction: column;
-  gap: 1.6vh;
+  gap: 1.4vh;
 }
 .modal-title {
   font-family: 'Bebas Neue', sans-serif;
@@ -485,16 +487,16 @@ body::before {
   justify-content: space-between;
   background: #181818;
   border: 1px solid rgba(255,255,255,0.06);
-  padding: 1.2vh 1.2vw;
+  padding: 1.1vh 1.2vw;
   border-radius: 0.5vw;
 }
 .setting-label {
-  font-size: 1.25vw;
+  font-size: 1.2vw;
   letter-spacing: 0.2vw;
   color: #ccc;
 }
 .setting-sub {
-  font-size: 0.85vw;
+  font-size: 0.8vw;
   letter-spacing: 0.15vw;
   color: #555;
 }
@@ -680,6 +682,17 @@ input:checked + .slider:before { transform: translateX(115%); background-color: 
       </div>
       <label class="switch">
         <input type="checkbox" id="set-idle-enabled">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">FOLLOW MOUSE CURSOR</div>
+        <div class="setting-sub">EYES TRACK POINTER &amp; SCREEN EDGES</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="set-idle-track">
         <span class="slider"></span>
       </label>
     </div>
@@ -1035,6 +1048,7 @@ document.getElementById('modal-input').addEventListener('keydown',e=>{
 ══════════════════════════════════════ */
 let idleConfig = Object.assign({
   enabled: true,
+  trackMouse: true,
   minutes: 10,
   eyeColor: '#4cc3ff',
   pupilColor: '#08182b'
@@ -1047,6 +1061,7 @@ const ctx             = canvas.getContext('2d');
 
 document.getElementById('gear-btn').addEventListener('click', () => {
   document.getElementById('set-idle-enabled').checked    = idleConfig.enabled;
+  document.getElementById('set-idle-track').checked      = idleConfig.trackMouse;
   document.getElementById('set-idle-mins').value         = idleConfig.minutes;
   document.getElementById('set-idle-eye-color').value    = idleConfig.eyeColor;
   document.getElementById('set-idle-pupil-color').value  = idleConfig.pupilColor;
@@ -1064,12 +1079,13 @@ settingsOverlay.addEventListener('click', e => {
 
 document.getElementById('settings-save').addEventListener('click', () => {
   const enabled    = document.getElementById('set-idle-enabled').checked;
+  const trackMouse = document.getElementById('set-idle-track').checked;
   let mins         = parseFloat(document.getElementById('set-idle-mins').value);
   if (isNaN(mins) || mins <= 0) mins = 10;
   const eyeColor   = document.getElementById('set-idle-eye-color').value   || '#4cc3ff';
   const pupilColor = document.getElementById('set-idle-pupil-color').value || '#08182b';
 
-  idleConfig = { enabled, minutes: mins, eyeColor, pupilColor };
+  idleConfig = { enabled, trackMouse, minutes: mins, eyeColor, pupilColor };
   lsSave(LS_IDLE, idleConfig);
   closeSettings();
   resetIdleTimer();
@@ -1078,6 +1094,7 @@ document.getElementById('settings-save').addEventListener('click', () => {
 /* ── Idle Timer Logic ── */
 let idleTimeout = null;
 let isIdleActive = false;
+let lastMouseTrackTime = 0;
 
 function resetIdleTimer() {
   clearTimeout(idleTimeout);
@@ -1088,15 +1105,85 @@ function resetIdleTimer() {
   idleTimeout = setTimeout(startIdleEyes, ms);
 }
 
+// Reset countdown on activity while on the clock
 ['mousemove', 'mousedown', 'keydown', 'touchstart', 'wheel'].forEach(evt => {
   window.addEventListener(evt, () => {
     if (!isIdleActive) resetIdleTimer();
   }, { passive: true });
 });
 
+// Wake back up to flip clock ONLY on click/tap or key press (so mouse tracking works!)
 idleOverlay.addEventListener('click', stopIdleEyes);
+window.addEventListener('keydown', () => {
+  if (isIdleActive) stopIdleEyes();
+});
 
-/* ── Color Shading Helper (Creates top-to-bottom LED gradient like reference) ── */
+/* ── Mouse Cursor Tracking (Inside 10" monitor + Screen Exit Memory for Main/24" Monitors) ── */
+function updateGazeFromPointer(clientX, clientY) {
+  if (!isIdleActive || !idleConfig.trackMouse) return;
+  isHappy = false;
+  lastMouseTrackTime = Date.now();
+
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  // Normalize cursor position from -1 to +1 relative to center of the 10" monitor
+  const nx = (clientX - w / 2) / (w / 2);
+  const ny = (clientY - h / 2) / (h / 2);
+
+  // Map to -2..+2 grid coordinates:
+  // |nx| < 0.22 -> 0 (center)
+  // |nx| < 0.65 -> ±1 (pupil shifts 1 grid, socket stays)
+  // |nx| >= 0.65 -> ±2 (pupil shifts 2 grids + socket shifts 1 grid!)
+  const mapCoord = val => {
+    if (Math.abs(val) < 0.22) return 0;
+    if (Math.abs(val) < 0.65) return Math.sign(val) * 1;
+    return Math.sign(val) * 2;
+  };
+
+  tgtLookX = mapCoord(nx);
+  tgtLookY = mapCoord(ny);
+}
+
+window.addEventListener('mousemove', e => {
+  if (isIdleActive && idleConfig.trackMouse) {
+    updateGazeFromPointer(e.clientX, e.clientY);
+  }
+}, { passive: true });
+
+// When cursor leaves the 10" screen toward your ultrawide (top) or 24" monitor (right),
+// lock gaze toward the exit edge!
+document.addEventListener('mouseleave', e => {
+  if (!isIdleActive || !idleConfig.trackMouse) return;
+  lastMouseTrackTime = Date.now();
+  isHappy = false;
+
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const x = e.clientX;
+  const y = e.clientY;
+
+  if (y <= 5) {
+    // Exited top edge toward Ultrawide (Display 2) or upper-right toward 24" (Display 3)
+    tgtLookY = -2;
+    if (x > w * 0.72) tgtLookX = 2;
+    else if (x < w * 0.28) tgtLookX = -2;
+    else tgtLookX = 0;
+  } else if (x >= w - 5) {
+    // Exited right edge toward 24" monitor (Display 3)
+    tgtLookX = 2;
+    tgtLookY = y < h * 0.4 ? -1 : 0;
+  } else if (x <= 5) {
+    // Exited left edge
+    tgtLookX = -2;
+    tgtLookY = y < h * 0.4 ? -1 : 0;
+  } else if (y >= h - 5) {
+    // Exited bottom edge
+    tgtLookY = 2;
+  }
+});
+
+/* ── Color Shading Helper ── */
 function hexToRgb(hex) {
   const clean = hex.replace('#', '');
   const num = parseInt(clean, 16);
@@ -1118,10 +1205,9 @@ function shadeColor(hex, factor) {
 let animFrameId   = null;
 let behaviorTimer = null;
 
-// Current vs Target grid coordinates for smooth step-by-step movement
 let curLookX = 0, curLookY = 0;
 let tgtLookX = 0, tgtLookY = 0;
-let curBlink = 0, tgtBlink = 0; // 0 = open, 7 = fully closed
+let curBlink = 0, tgtBlink = 0;
 let isHappy  = false;
 let lastStepTime = 0;
 
@@ -1132,37 +1218,37 @@ function resizeCanvas() {
 }
 window.addEventListener('resize', resizeCanvas);
 
-// 13x14 Rounded Eye Socket Mask (matches image_a36a7f.png)
+// 13x14 Rounded Eye Socket Mask
 const SOCKET_MASK = [
-  "0000111110000", // y = -7
-  "0011111111100", // y = -6
-  "0111111111110", // y = -5
-  "0111111111110", // y = -4
-  "1111111111111", // y = -3
-  "1111111111111", // y = -2
-  "1111111111111", // y = -1
-  "1111111111111", // y =  0
-  "1111111111111", // y = +1
-  "1111111111111", // y = +2
-  "0111111111110", // y = +3
-  "0111111111110", // y = +4
-  "0011111111100", // y = +5
-  "0000111110000"  // y = +6
+  "0000111110000",
+  "0011111111100",
+  "0111111111110",
+  "0111111111110",
+  "1111111111111",
+  "1111111111111",
+  "1111111111111",
+  "1111111111111",
+  "1111111111111",
+  "1111111111111",
+  "0111111111110",
+  "0111111111110",
+  "0011111111100",
+  "0000111110000"
 ];
 
 // 7x8 Rounded Pupil Mask
 const PUPIL_MASK = [
-  "0011100", // py = -4
-  "0111110", // py = -3
-  "1111111", // py = -2
-  "1111111", // py = -1
-  "1111111", // py =  0
-  "1111111", // py = +1
-  "0111110", // py = +2
-  "0011100"  // py = +3
+  "0011100",
+  "0111110",
+  "1111111",
+  "1111111",
+  "1111111",
+  "1111111",
+  "0111110",
+  "0011100"
 ];
 
-// 14x6 Happy Arch Mask (matches image_a36a09.png)
+// 14x5 Happy Arch Mask
 const HAPPY_ARCH = [
   "00001111100000",
   "00111111111000",
@@ -1175,11 +1261,9 @@ function drawEyes() {
   const w = canvas.width;
   const h = canvas.height;
 
-  // Dark matrix background
   ctx.fillStyle = '#0a0a0a';
   ctx.fillRect(0, 0, w, h);
 
-  // Virtual LED matrix dimensions (46 x 22 matches wide panoramic ratio)
   const cols = 46;
   const rows = 22;
   const cellSize = Math.min(w / cols, h / rows);
@@ -1190,7 +1274,6 @@ function drawEyes() {
   const offsetX = (w - cols * cellSize) / 2;
   const offsetY = (h - rows * cellSize) / 2;
 
-  // 1. Draw faint unlit LED grid across the entire screen
   ctx.fillStyle = '#151515';
   for (let gy = 0; gy < rows; gy++) {
     for (let gx = 0; gx < cols; gx++) {
@@ -1226,7 +1309,6 @@ function drawEyes() {
     const scx = baseCx + socketShiftX;
     const scy = baseCy + socketShiftY;
 
-    // ── HAPPY ^ ^ EXPRESSION (image_a36a09.png) ──
     if (isHappy) {
       const archColor = shadeColor(idleConfig.eyeColor, 1.35);
       for (let r = 0; r < HAPPY_ARCH.length; r++) {
@@ -1236,7 +1318,6 @@ function drawEyes() {
           }
         }
       }
-      // Cute 4x2 pink blush underneath outer corners
       const blushX = isRightEye ? (baseCx + 3) : (baseCx - 6);
       const blushY = baseCy + 4;
       for (let by = 0; by < 2; by++) {
@@ -1247,11 +1328,9 @@ function drawEyes() {
       return;
     }
 
-    // ── OPEN / BLINKING ANIME EYE (image_a36a7f.png) ──
     const topClip = -7 + curBlink;
     const botClip = 6 - Math.floor(curBlink * 0.45);
 
-    // Closed eyelid line
     if (curBlink >= 7) {
       const lidColor = shadeColor(idleConfig.eyeColor, 1.1);
       for (let dx = -5; dx <= 5; dx++) {
@@ -1260,7 +1339,6 @@ function drawEyes() {
       return;
     }
 
-    // Pupil center moves freely inside socket (curLookX, curLookY)
     const pcx = scx + curLookX;
     const pcy = scy + curLookY;
 
@@ -1268,7 +1346,6 @@ function drawEyes() {
       const dy = r - 7;
       if (dy < topClip || dy > botClip) continue;
 
-      // Vertical shading factor: darker at top (0.55) -> bright luminous tint at bottom (1.42)
       const normY = r / 13;
       const shadeFactor = 0.55 + normY * 0.87;
       const shadedIris = shadeColor(idleConfig.eyeColor, shadeFactor);
@@ -1279,7 +1356,6 @@ function drawEyes() {
         const gx = scx + dx;
         const gy = scy + dy;
 
-        // Check if pixel falls inside the 7x8 rounded pupil
         const pdx = gx - pcx;
         const pdy = gy - pcy;
         let inPupil = false;
@@ -1287,7 +1363,6 @@ function drawEyes() {
           inPupil = PUPIL_MASK[pdy + 4][pdx + 3] === '1';
         }
 
-        // Specular white highlights relative to pupil (2x2 top-left, 1x1 bottom-right)
         const isBigHighlight = (pdx === -3 || pdx === -2) && (pdy === -4 || pdy === -3);
         const isSmallHighlight = (pdx === 2 && pdy === 2);
 
@@ -1302,7 +1377,6 @@ function drawEyes() {
     }
   }
 
-  // Left eye centered at x=12, Right eye centered at x=33, y=11
   renderEye(12, 11, false);
   renderEye(33, 11, true);
 }
@@ -1311,7 +1385,6 @@ function drawEyes() {
 function animationLoop(timestamp) {
   if (!isIdleActive) return;
 
-  // Step grid coordinates every 45ms for crisp yet smooth pixel-by-pixel motion
   if (timestamp - lastStepTime >= 45) {
     lastStepTime = timestamp;
     let changed = false;
@@ -1325,7 +1398,6 @@ function animationLoop(timestamp) {
       changed = true;
     }
     if (curBlink !== tgtBlink) {
-      // Blink closes fast (step 2), opens smoothly (step 1)
       const step = tgtBlink > curBlink ? 2 : 1;
       if (tgtBlink > curBlink) {
         curBlink = Math.min(tgtBlink, curBlink + step);
@@ -1345,11 +1417,11 @@ function animationLoop(timestamp) {
 function triggerBlink(doubleBlink = false) {
   if (!isIdleActive) return;
   isHappy = false;
-  tgtBlink = 7; // close smoothly
+  tgtBlink = 7;
 
   setTimeout(() => {
     if (!isIdleActive) return;
-    tgtBlink = 0; // open smoothly
+    tgtBlink = 0;
 
     if (doubleBlink) {
       setTimeout(() => {
@@ -1367,36 +1439,36 @@ function triggerBlink(doubleBlink = false) {
 function scheduleNextBehavior() {
   if (!isIdleActive) return;
 
+  // Check if user moved mouse recently (within last 4 seconds)
+  const mouseActiveRecently = idleConfig.trackMouse && (Date.now() - lastMouseTrackTime < 4000);
   const roll = Math.random();
 
-  if (roll < 0.35) {
-    // Smooth single or double blink
-    triggerBlink(Math.random() < 0.32);
-    behaviorTimer = setTimeout(scheduleNextBehavior, 2200 + Math.random() * 3200);
+  if (roll < 0.40 || mouseActiveRecently) {
+    // Still blink naturally even while tracking the cursor!
+    triggerBlink(Math.random() < 0.30);
+    behaviorTimer = setTimeout(scheduleNextBehavior, 2400 + Math.random() * 3200);
 
   } else if (roll < 0.85) {
-    // Look around:
-    // ±1 = small glance (only pupil moves)
-    // ±2 = far glance (pupil moves to edge -> outer eye socket follows by 1 grid!)
+    // Random idle glances when mouse isn't actively moving
     isHappy = false;
     const moves = [
-      { x:  1, y:  0 }, // slight right (pupil only)
-      { x:  2, y:  0 }, // far right (pupil + socket shifts right 1)
-      { x: -1, y:  0 }, // slight left (pupil only)
-      { x: -2, y:  0 }, // far left (pupil + socket shifts left 1)
-      { x:  0, y: -2 }, // look up (pupil + socket shifts up 1)
-      { x:  0, y:  2 }, // look down (pupil + socket shifts down 1)
-      { x:  2, y: -1 }, // far right-up
-      { x: -2, y:  1 }, // far left-down
-      { x:  0, y:  0 }  // back to center
+      { x:  1, y:  0 },
+      { x:  2, y:  0 },
+      { x: -1, y:  0 },
+      { x: -2, y:  0 },
+      { x:  0, y: -2 },
+      { x:  0, y:  2 },
+      { x:  2, y: -1 },
+      { x: -2, y:  1 },
+      { x:  0, y:  0 }
     ];
     const pick = moves[Math.floor(Math.random() * moves.length)];
     tgtLookX = pick.x;
     tgtLookY = pick.y;
-    behaviorTimer = setTimeout(scheduleNextBehavior, 1600 + Math.random() * 2600);
+    behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2600);
 
   } else {
-    // Happy ^ ^ blush expression (image_a36a09.png)
+    // Happy ^ ^ blush expression
     tgtLookX = 0;
     tgtLookY = 0;
     curLookX = 0;
@@ -1438,7 +1510,6 @@ function stopIdleEyes() {
   resetIdleTimer();
 }
 
-// Start idle timer on load
 resetIdleTimer();
 </script>
 </body>
