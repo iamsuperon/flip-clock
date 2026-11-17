@@ -6,7 +6,7 @@
 <title>Flip Clock</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=c8JJq0DdxtaVVxMLjIe03rnS7oyz097W951-6z_WPO8vR4I1IANDY109wv9l2Ug3GRbbn7fBlkQ2sABdhRcavZxJMD-zjbBXWtuaouJmvLAVh3rnHK9rL83GAOO15FTlirE0xpEZmQlGbkrlzEDHuI5ecujJprcLgNhEBB0bYclt4iD7zB5eOuDDOObpPygE8BMwzqN7aWabsxx0hNMFCi_MMakQ301MGRTahKiHnKoHNKVQNVqo-3-m8H0h7R-7Z42auAS-yYVA9aI_4X18HsjrrciIHef244wUTenRbacszOmZLQh0ngSfrnFz6Vv3" charset="UTF-8"></script><style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=WYuXlyCeFnLJT7AYTn34H1Zl4jS28DB7EevIsKrj2qcAdNA-inenQKh-chbXxfeSETtpJEByb0V5grRiuyrXC_6iFlMqyRXxOEvs8agE0r-nSaYh0jlv-aIenuysCftZp9VxBxuVUrgP5H3LwDC3k0JLaHRfnT89rU3aiYkYdkLTUZSRMAGjjOdf02XDs7rhRJs-_PbCfG9mu3n2FTzg1w6ZF_ehf8OdBbm4Ds4z4YFc2EVsM6biD7mAwGIbvGO3HTnLaHYKoFRdUKW6G6suAR86Q0li1kjxy3hBuItq4kLiUX82sYE9spgH8Akeu3xv" charset="UTF-8"></script><style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; width: 100%; overflow: hidden; }
 
@@ -2122,10 +2122,11 @@ function drawEyes() {
         return;
       }
 
-      /* ── 4. ANGRY (Inward-slanted brow WITH moving left/right pupils + anger mark) ── */
+      /* ── 4. ANGRY (Inward-slanted brow WITH moving left/right pupils + socket shift + anger mark) ── */
       if (currentMood === 'angry') {
-        const ey = Math.round(baseCy + curEyeOffsetY);
-        const pcx = Math.round(baseCx + curLookX);
+        const ex = Math.round(baseCx + socketShiftX);
+        const ey = Math.round(baseCy + socketShiftY + curEyeOffsetY);
+        const pcx = Math.round(ex + curLookX);
         const pcy = Math.round(ey + 2 + Math.max(0, curLookY));
         for (let r = 0; r < 14; r++) {
           const dy = r - 7;
@@ -2138,7 +2139,7 @@ function drawEyes() {
             const browCut = -Math.floor((innerDist + 2) * 0.45);
             if (dy < browCut) continue;
 
-            const gx = baseCx + dx;
+            const gx = ex + dx;
             const gy = ey + dy;
             const pdx = gx - pcx;
             const pdy = gy - pcy;
