@@ -1181,9 +1181,11 @@ function clearClockSequenceTimers() {
 
 function resetBubbleGumState() {
   gumStage = 'none';
+  gumStageTimer = 0;
   gumRadius = 0;
   gumPopProgress = 0;
   gumChewTick = 0;
+  gumGlanced = false;
 }
 
 function schedulePeriodicPixelClock() {
@@ -1339,11 +1341,16 @@ let behaviorTimer = null;
 let currentMood = 'normal';
 let winkEyeSide = 'right';
 let sleepyYawnStage = 'idle'; // 'idle' | 'opening' | 'wide' | 'closing'
-let gumStage = 'none';        // 'none' | 'chew' | 'blow' | 'pop'
+let gumStage = 'none';        // 'none' | 'chew' | 'blow' | 'pop' | 'recover'
+let gumStageTimer = 0;
 let gumRadius = 0;
 let gumPopProgress = 0;
 let gumChewTick = 0;
+let gumGlanced = false;
 let lastGumTickTime = 0;
+
+let giggleTick = 0;
+let lastGiggleTime = 0;
 
 let curLookX = 0, curLookY = 0;
 let tgtLookX = 0, tgtLookY = 0;
@@ -1524,6 +1531,38 @@ const MOUTH_MASKS = {
     "01110"
   ]
 };
+
+// Giggling mouth animation frames for 'joy' expression
+const JOY_GIGGLE_FRAMES = [
+  // 0: classic 'w' giggle smile
+  [
+    "00000",
+    "10101",
+    "01010",
+    "00000"
+  ],
+  // 1: open laughing 'w' with pink tongue
+  [
+    "10101",
+    "12121",
+    "01110",
+    "00000"
+  ],
+  // 2: lifted 'hee!' giggle
+  [
+    "10101",
+    "01010",
+    "00000",
+    "00000"
+  ],
+  // 3: open chuckle smile with pink tongue
+  [
+    "11111",
+    "12221",
+    "01110",
+    "00000"
+  ]
+];
 
 // Chewing pink bubble gum frames ('1' = lip, '2' = pink gum)
 const GUM_CHEW_FRAMES = [
@@ -1810,6 +1849,11 @@ function drawEyes() {
   const socketShiftX = (Math.abs(curLookX) >= 2 || (isMovingSocketMood && curLookX !== 0)) ? Math.sign(curLookX) : 0;
   const socketShiftY = (Math.abs(curLookY) >= 2 || (isMovingSocketMood && curLookY !== 0)) ? Math.sign(curLookY) : 0;
 
+  const giggleBobY = (currentMood === 'joy' && giggleTick % 2 === 1) ? -1 : 0;
+  const giggleSwayX = currentMood === 'joy'
+    ? ((giggleTick % 4 === 1) ? -1 : ((giggleTick % 4 === 3) ? 1 : 0))
+    : 0;
+
   if (curEyeOffsetY > -21) {
     const isDeformed = bouncePhase !== 'none' || Math.abs(eyeScaleX - 1) > 0.015 || Math.abs(eyeScaleY - 1) > 0.015;
 
@@ -1977,17 +2021,20 @@ function drawEyes() {
         return;
       }
 
-      /* ── 2. JOY DOME (Dome top + curved lower cheek lid + pupil & highlight) ── */
+      /* ── 2. GIGGLING / JOY DOME (Bouncing dome + dancing pupil + rosy blush) ── */
       if (currentMood === 'joy') {
-        const ey = Math.round(baseCy + curEyeOffsetY);
-        const pcx = Math.round(baseCx + curLookX);
-        const pcy = Math.round(ey - 1);
+        const ex = baseCx + giggleSwayX;
+        const ey = Math.round(baseCy + curEyeOffsetY) + giggleBobY;
+        const pupilBob = (giggleTick % 2 === 1) ? -1 : 0;
+        const pcx = Math.round(ex + curLookX);
+        const pcy = Math.round(ey - 1 + pupilBob);
+
         for (let r = 0; r < JOY_DOME.length; r++) {
           const normY = r / (JOY_DOME.length - 1);
           const col = shadeColor(idleConfig.eyeColor, 1.35 - normY * 0.25);
           for (let c = 0; c < JOY_DOME[r].length; c++) {
             if (JOY_DOME[r][c] !== '1') continue;
-            const gx = baseCx - 7 + c;
+            const gx = ex - 7 + c;
             const gy = ey - 4 + r;
 
             const inDomeBody = (r >= 1 && r <= 4);
@@ -2005,6 +2052,14 @@ function drawEyes() {
             }
           }
         }
+
+        // Cute pulsing rosy blush under the outer cheek lid
+        const blushX = isRightEye ? (ex + 3) : (ex - 5);
+        const blushY = ey + 3;
+        const blushCol = (giggleTick % 2 === 1) ? '#ff6ea1' : '#d94c7a';
+        lightLED(blushX, blushY, blushCol, true);
+        lightLED(blushX + 1, blushY, blushCol, true);
+        lightLED(blushX + 2, blushY, blushCol, true);
         return;
       }
 
@@ -2152,6 +2207,10 @@ function drawEyes() {
           }
           return;
         }
+        if (gumStage === 'recover') {
+          renderShockedEye(baseCx, baseCy, isRightEye, false);
+          return;
+        }
       }
 
       /* ── 9. NORMAL / BLINK / BORED / SLEEPY / CHEWING ── */
@@ -2197,13 +2256,27 @@ function drawEyes() {
               }
             }
           }
-        } else if (gumStage === 'pop') {
+        } else if (gumStage === 'pop' || gumStage === 'recover') {
           const shockMask = MOUTH_MASKS.shocked;
           for (let r = 0; r < shockMask.length; r++) {
             for (let c = 0; c < shockMask[r].length; c++) {
               if (shockMask[r][c] === '1') {
                 lightLED(20 + c, 16 + r, mouthColor, true);
               }
+            }
+          }
+        }
+      } else if (!isDeformed && currentMood === 'joy') {
+        const frame = JOY_GIGGLE_FRAMES[giggleTick % JOY_GIGGLE_FRAMES.length];
+        const jmx = 20 + giggleSwayX;
+        const jmy = Math.round(16 + curEyeOffsetY) + giggleBobY;
+        for (let r = 0; r < frame.length; r++) {
+          for (let c = 0; c < frame[r].length; c++) {
+            const cell = frame[r][c];
+            if (cell === '1') {
+              lightLED(jmx + c, jmy + r, mouthColor, true);
+            } else if (cell === '2') {
+              lightLED(jmx + c, jmy + r, '#f4729b', true);
             }
           }
         }
@@ -2285,7 +2358,6 @@ function drawEyes() {
             const nx = dx / gumRadius;
             const ny = dy / gumRadius;
 
-            // Glossy white highlight on upper-left curve of the bubble
             const isSpec = gumRadius >= 2.2 && (
               (Math.abs(nx + 0.42) < 0.16 && Math.abs(ny + 0.42) < 0.16) ||
               (gumRadius >= 5 && Math.abs(nx + 0.25) < 0.11 && Math.abs(ny + 0.56) < 0.11)
@@ -2323,11 +2395,13 @@ function drawEyes() {
           }
         }
 
-        // Cute tiny pink gum specks stuck on cheeks right after pop
-        if (gumPopProgress >= 0.15 && gumPopProgress < 0.85) {
+        if (gumPopProgress >= 0.15) {
           lightLED(6, 15, '#ff66a3', true);
           lightLED(39, 14, '#ff66a3', true);
         }
+      } else if (gumStage === 'recover') {
+        lightLED(6, 15, '#ff66a3', true);
+        lightLED(39, 14, '#ff66a3', true);
       }
     }
   }
@@ -2602,6 +2676,12 @@ function animationLoop(timestamp) {
     needsDraw = true;
   }
 
+  if (currentMood === 'joy' && bouncePhase === 'none' && curEyeOffsetY > -21 && timestamp - lastGiggleTime >= 165) {
+    lastGiggleTime = timestamp;
+    giggleTick++;
+    needsDraw = true;
+  }
+
   if (
     idleConfig.showMouth !== false &&
     currentMood === 'normal' &&
@@ -2614,24 +2694,66 @@ function animationLoop(timestamp) {
     needsDraw = true;
   }
 
-  /* ── 4. Bubble Gum Chewing, Inflation & Pop Physics ── */
+  /* ── 4. State-Driven Bubble Gum Chewing, Inflation, Full Pop & Recovery ── */
   if (currentMood === 'bubblegum' && bouncePhase === 'none' && curEyeOffsetY > -21) {
-    if (gumStage === 'chew' && timestamp - lastGumTickTime >= 210) {
-      lastGumTickTime = timestamp;
-      gumChewTick++;
-      needsDraw = true;
+    gumStageTimer += dt;
+
+    if (gumStage === 'chew') {
+      if (timestamp - lastGumTickTime >= 200) {
+        lastGumTickTime = timestamp;
+        gumChewTick++;
+        needsDraw = true;
+      }
+      if (!gumGlanced && gumStageTimer >= 1.05) {
+        gumGlanced = true;
+        tgtLookX = -tgtLookX;
+        tgtLookY = 0;
+      }
+      if (gumStageTimer >= 2.1) {
+        gumStage = 'blow';
+        gumStageTimer = 0;
+        gumRadius = 0.8;
+        tgtLookX = 0;
+        tgtLookY = 2;
+        needsDraw = true;
+      }
     } else if (gumStage === 'blow') {
-      const growRate = 4.2 + gumRadius * 0.42;
+      const growRate = 4.4 + gumRadius * 0.44;
       gumRadius += growRate * dt;
       if (gumRadius >= 29.8) {
         gumRadius = 29.8;
         gumStage = 'pop';
+        gumStageTimer = 0;
         gumPopProgress = 0;
       }
       needsDraw = true;
     } else if (gumStage === 'pop') {
-      gumPopProgress = Math.min(1, gumPopProgress + dt / 0.85);
+      gumPopProgress = Math.min(1, gumPopProgress + dt / 0.9);
+      if (gumPopProgress >= 1) {
+        gumStage = 'recover';
+        gumStageTimer = 0;
+      }
       needsDraw = true;
+    } else if (gumStage === 'recover') {
+      if (gumStageTimer >= 0.65) {
+        resetBubbleGumState();
+        currentMood = 'happy';
+        curLookX = 0;
+        tgtLookX = 0;
+        curLookY = 0;
+        tgtLookY = 0;
+        needsDraw = true;
+
+        clearTimeout(behaviorTimer);
+        behaviorTimer = setTimeout(() => {
+          if (!isIdleActive) return;
+          currentMood = 'normal';
+          curBlink = 0;
+          tgtBlink = 0;
+          drawEyes();
+          behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
+        }, 1400);
+      }
     }
   }
 
@@ -2731,21 +2853,18 @@ function runBoredSequence(timersArray) {
   tgtBlink = 0;
   drawEyes();
 
-  // Roll eyeballs up and across
   timersArray.push(setTimeout(() => {
     if (!isIdleActive || currentMood !== 'bored') return;
     tgtLookX = -dir;
     tgtLookY = -2;
   }, 850));
 
-  // Glance far to the other side
   timersArray.push(setTimeout(() => {
     if (!isIdleActive || currentMood !== 'bored') return;
     tgtLookX = -dir * 2;
     tgtLookY = 1;
   }, 1700));
 
-  // Slow unimpressed blink & sigh downward
   timersArray.push(setTimeout(() => {
     if (!isIdleActive || currentMood !== 'bored') return;
     tgtBlink = 3;
@@ -2760,46 +2879,19 @@ function runBoredSequence(timersArray) {
 }
 
 /* ── Bubble Gum Chewing -> Fullscreen Blow -> Pop Sequence ── */
-function runBubbleGumSequence(timersArray) {
+function runBubbleGumSequence() {
   gumStage = 'chew';
+  gumStageTimer = 0;
   gumRadius = 0;
   gumPopProgress = 0;
   gumChewTick = 0;
+  gumGlanced = false;
   lastGumTickTime = performance.now();
   curBlink = 0;
   tgtBlink = 0;
   tgtLookX = Math.random() < 0.5 ? -1 : 1;
   tgtLookY = 1;
   drawEyes();
-
-  // Glance to other side while chewing
-  timersArray.push(setTimeout(() => {
-    if (!isIdleActive || currentMood !== 'bubblegum') return;
-    tgtLookX = -tgtLookX;
-    tgtLookY = 0;
-  }, 1050));
-
-  // Look down at mouth and start blowing the pink bubble
-  timersArray.push(setTimeout(() => {
-    if (!isIdleActive || currentMood !== 'bubblegum') return;
-    gumStage = 'blow';
-    gumRadius = 0.8;
-    tgtLookX = 0;
-    tgtLookY = 2;
-    drawEyes();
-  }, 2100));
-
-  // After fullscreen pop settles, smile happily before returning to normal
-  timersArray.push(setTimeout(() => {
-    if (!isIdleActive || currentMood !== 'bubblegum') return;
-    resetBubbleGumState();
-    currentMood = 'happy';
-    curLookX = 0;
-    tgtLookX = 0;
-    curLookY = 0;
-    tgtLookY = 0;
-    drawEyes();
-  }, 6350));
 }
 
 /* ── Sleepy Drift + Yawn Animation Sequence ── */
@@ -2978,7 +3070,8 @@ function scheduleNextBehavior() {
     } else if (chosenMood === 'bored') {
       runBoredSequence(moodGlanceTimers);
     } else if (chosenMood === 'bubblegum') {
-      runBubbleGumSequence(moodGlanceTimers);
+      runBubbleGumSequence();
+      return;
     } else if (chosenMood === 'suspicious') {
       const firstDir = Math.random() < 0.5 ? -2 : 2;
       tgtLookX = firstDir;
@@ -3002,6 +3095,8 @@ function scheduleNextBehavior() {
     } else if (chosenMood === 'sleepy') {
       runSleepySequence(moodGlanceTimers);
     } else if (chosenMood === 'joy') {
+      giggleTick = 0;
+      lastGiggleTime = performance.now();
       tgtLookX = Math.random() < 0.33 ? -1 : (Math.random() < 0.5 ? 1 : 0);
       tgtLookY = 0;
     } else {
@@ -3021,12 +3116,12 @@ function scheduleNextBehavior() {
 
     const holdDuration = chosenMood === 'wink'
       ? 1800
-      : chosenMood === 'bubblegum'
-        ? 7600
-        : chosenMood === 'sleepy'
-          ? 5100
-          : chosenMood === 'bored'
-            ? 3400
+      : chosenMood === 'sleepy'
+        ? 5100
+        : chosenMood === 'bored'
+          ? 3400
+          : chosenMood === 'joy'
+            ? (3200 + Math.random() * 800)
             : chosenMood === 'angry'
               ? (3000 + Math.random() * 800)
               : (2800 + Math.random() * 1400);
@@ -3097,6 +3192,8 @@ function startIdleEyes() {
   lastPhysTime = 0;
   mouthTick = 0;
   lastMouthAnimTime = 0;
+  giggleTick = 0;
+  lastGiggleTime = 0;
 
   drawEyes();
   idleOverlay.classList.add('active');
