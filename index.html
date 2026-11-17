@@ -1223,6 +1223,7 @@ function updateGazeFromPointer(clientX, clientY) {
   clearMoodGlanceTimers();
   clearFightSleepTimers();
   clearBlinkTimers();
+  sleepyYawnStage = 'idle';
 
   if (clockModeActive || bouncePhase !== 'none') {
     clearClockSequenceTimers();
@@ -1245,6 +1246,8 @@ function updateGazeFromPointer(clientX, clientY) {
     currentMood = 'normal';
     curBlink = 0;
     tgtBlink = 0;
+    curEyeOffsetY = 0;
+    tgtEyeOffsetY = 0;
   }
   lastMouseInsideTime = Date.now();
 
@@ -1277,10 +1280,12 @@ document.addEventListener('mouseleave', e => {
   clearMoodGlanceTimers();
   clearFightSleepTimers();
   clearBlinkTimers();
+  sleepyYawnStage = 'idle';
 
   if (e.clientX <= 12) {
     currentMood = 'normal';
     curBlink = 0; tgtBlink = 0;
+    curEyeOffsetY = 0; tgtEyeOffsetY = 0;
     tgtLookX = 2;
     tgtLookY = -2;
     lookUpModeUntil = Date.now() + 30000;
@@ -1324,6 +1329,7 @@ let behaviorTimer = null;
 
 let currentMood = 'normal';
 let winkEyeSide = 'right';
+let sleepyYawnStage = 'idle'; // 'idle' | 'opening' | 'wide' | 'closing'
 let curLookX = 0, curLookY = 0;
 let tgtLookX = 0, tgtLookY = 0;
 let curBlink = 0, tgtBlink = 0;
@@ -1331,6 +1337,8 @@ let lastStepTime = 0;
 let lastBlinkStepTime = 0;
 let lastPhysTime = 0;
 let zzzTick = 0;
+let mouthTick = 0;
+let lastMouthAnimTime = 0;
 
 // Vertical Eye Offset (-22 = completely offscreen top, +5 = invisible floor) & Squash/Stretch Physics
 let curEyeOffsetY = 0, tgtEyeOffsetY = 0;
@@ -1507,6 +1515,59 @@ const MOUTH_MASKS = {
     "01110"
   ]
 };
+
+// Yawning stages for 'sleepy' expression
+const SLEEPY_YAWN_MASKS = {
+  idle: [
+    "00100",
+    "01010",
+    "00100",
+    "00000"
+  ],
+  opening: [
+    "01110",
+    "10001",
+    "01110",
+    "00000"
+  ],
+  wide: [
+    "01110",
+    "10001",
+    "12221",
+    "01110"
+  ],
+  closing: [
+    "01110",
+    "10001",
+    "01110",
+    "00000"
+  ]
+};
+
+// Subtle cute animation frames exclusively for the 'normal' U-smile mouth
+const NORMAL_MOUTH_FRAMES = [
+  // 0: classic U-smile
+  [
+    "10001",
+    "10001",
+    "01110",
+    "00000"
+  ],
+  // 1: gentle 1px soft bounce/squish
+  [
+    "00000",
+    "10001",
+    "01110",
+    "00000"
+  ],
+  // 2: cute tiny "o" chirp
+  [
+    "01110",
+    "10001",
+    "01110",
+    "00000"
+  ]
+];
 
 // 6x9 Thick LED Clock Digits (0–9)
 const CLOCK_DIGITS = {
@@ -1708,8 +1769,8 @@ function drawEyes() {
     ctx.restore();
   }
 
-  const socketShiftX = Math.abs(curLookX) >= 2 ? Math.sign(curLookX) : 0;
-  const socketShiftY = Math.abs(curLookY) >= 2 ? Math.sign(curLookY) : 0;
+  const socketShiftX = (Math.abs(curLookX) >= 2 || (currentMood === 'sleepy' && curLookX !== 0)) ? Math.sign(curLookX) : 0;
+  const socketShiftY = (Math.abs(curLookY) >= 2 || (currentMood === 'sleepy' && curLookY >= 2)) ? Math.sign(curLookY) : 0;
 
   if (curEyeOffsetY > -21) {
     const isDeformed = bouncePhase !== 'none' || Math.abs(eyeScaleX - 1) > 0.015 || Math.abs(eyeScaleY - 1) > 0.015;
@@ -1718,20 +1779,18 @@ function drawEyes() {
       const scx = Math.round(rawScx);
       const scy = Math.round(rawScy);
 
-      let topClip = -7 + curBlink;
-      let botClip = 6 - Math.floor(curBlink * 0.45);
-
-      if (currentMood === 'bored') {
-        topClip = Math.max(topClip, -2);
-      } else if (currentMood === 'sleepy') {
-        topClip = Math.max(topClip, 0);
+      const baseTopDroop = currentMood === 'bored' ? 5 : (currentMood === 'sleepy' ? 7 : 0);
+      let topClip = -7 + baseTopDroop + curBlink;
+      let botClip = 6 - Math.floor((baseTopDroop * 0.35 + curBlink) * 0.45);
+      if (currentMood === 'sleepy') {
         botClip = Math.min(botClip, 4);
       }
 
-      if (curBlink >= 7) {
-        const lidColor = shadeColor(idleConfig.eyeColor, 1.1);
+      if (curBlink >= 7 || topClip > botClip) {
+        const lidColor = shadeColor(idleConfig.eyeColor, 1.15);
+        const closedY = currentMood === 'sleepy' ? scy + 3 : scy + 2;
         for (let dx = -5; dx <= 5; dx++) {
-          lightLED(scx + dx, scy + 2, lidColor, true);
+          lightLED(scx + dx, closedY, lidColor, true);
         }
         return;
       }
@@ -1776,9 +1835,10 @@ function drawEyes() {
       }
 
       if (currentMood === 'bored' || currentMood === 'sleepy') {
-        const lidRow = currentMood === 'bored' ? -2 : 0;
+        const lidRow = topClip;
         const lidColor = shadeColor(idleConfig.eyeColor, 1.25);
-        for (let dx = -6; dx <= 6; dx++) {
+        const halfWidth = (lidRow <= -2 || lidRow >= 3) ? 5 : 6;
+        for (let dx = -halfWidth; dx <= halfWidth; dx++) {
           lightLED(scx + dx, scy + lidRow, lidColor, true);
         }
       }
@@ -2077,39 +2137,68 @@ function drawEyes() {
 
     /* ── CUTE PIXEL MOUTH (Matches each eye expression) ── */
     if (idleConfig.showMouth !== false) {
-      const mx = 20;
-      const my = Math.round(16 + curEyeOffsetY);
+      const isNormalMouth = !isDeformed && currentMood === 'normal';
+      const isSleepyMouth = !isDeformed && currentMood === 'sleepy';
+      const mouthShiftX = isNormalMouth ? curLookX : (isSleepyMouth ? Math.sign(curLookX) : 0);
+      const mouthShiftY = isNormalMouth ? Math.sign(curLookY) : 0;
+      const mx = 20 + mouthShiftX;
+      const my = Math.round(16 + curEyeOffsetY) + mouthShiftY;
       const mouthColor = shadeColor(idleConfig.eyeColor, 1.3);
 
-      let activeMouthKey = 'normal';
-      if (isDeformed) {
-        activeMouthKey = (bouncePhase === 'falling' && eyeVelY > 12) ? 'sleepy' : 'normal';
-      } else if (currentMood === 'sleeping') {
-        // Gentle breathing bubble synced to zzzTick
-        const breathMask = (zzzTick % 2 === 0)
-          ? ["00000", "00100", "00000", "00000"]
-          : ["00000", "01100", "01100", "00000"];
-        for (let r = 0; r < 4; r++) {
-          for (let c = 0; c < 5; c++) {
-            if (breathMask[r][c] === '1') {
-              lightLED(mx + c, my + r, shadeColor(idleConfig.eyeColor, 1.05), true);
+      if (isNormalMouth) {
+        // Subtle cute idle cycle exclusively for the normal U-smile mouth
+        const step = mouthTick % 10;
+        const frameIdx = (step === 3 || step === 7) ? 1 : (step === 8 ? 2 : 0);
+        const mask = NORMAL_MOUTH_FRAMES[frameIdx];
+        for (let r = 0; r < mask.length; r++) {
+          for (let c = 0; c < mask[r].length; c++) {
+            if (mask[r][c] === '1') {
+              lightLED(mx + c, my + r, mouthColor, true);
             }
           }
         }
-        activeMouthKey = null;
-      } else if (MOUTH_MASKS[currentMood]) {
-        activeMouthKey = currentMood;
-      }
-
-      if (activeMouthKey) {
-        const mask = MOUTH_MASKS[activeMouthKey];
-        for (let r = 0; r < mask.length; r++) {
-          for (let c = 0; c < mask[r].length; c++) {
-            const cell = mask[r][c];
+      } else if (isSleepyMouth) {
+        const yawnMask = SLEEPY_YAWN_MASKS[sleepyYawnStage] || SLEEPY_YAWN_MASKS.idle;
+        for (let r = 0; r < yawnMask.length; r++) {
+          for (let c = 0; c < yawnMask[r].length; c++) {
+            const cell = yawnMask[r][c];
             if (cell === '1') {
               lightLED(mx + c, my + r, mouthColor, true);
             } else if (cell === '2') {
               lightLED(mx + c, my + r, '#f4729b', true);
+            }
+          }
+        }
+      } else {
+        let activeMouthKey = 'normal';
+        if (isDeformed) {
+          activeMouthKey = (bouncePhase === 'falling' && eyeVelY > 12) ? 'sleepy' : 'normal';
+        } else if (currentMood === 'sleeping') {
+          const breathMask = (zzzTick % 2 === 0)
+            ? ["00000", "00100", "00000", "00000"]
+            : ["00000", "01100", "01100", "00000"];
+          for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 5; c++) {
+              if (breathMask[r][c] === '1') {
+                lightLED(mx + c, my + r, shadeColor(idleConfig.eyeColor, 1.05), true);
+              }
+            }
+          }
+          activeMouthKey = null;
+        } else if (MOUTH_MASKS[currentMood]) {
+          activeMouthKey = currentMood;
+        }
+
+        if (activeMouthKey) {
+          const mask = MOUTH_MASKS[activeMouthKey];
+          for (let r = 0; r < mask.length; r++) {
+            for (let c = 0; c < mask[r].length; c++) {
+              const cell = mask[r][c];
+              if (cell === '1') {
+                lightLED(mx + c, my + r, mouthColor, true);
+              } else if (cell === '2') {
+                lightLED(mx + c, my + r, '#f4729b', true);
+              }
             }
           }
         }
@@ -2331,11 +2420,14 @@ function animationLoop(timestamp) {
     }
   }
 
-  /* ── 2. Fast Blink Stepper (22ms cadence) ── */
-  if (timestamp - lastBlinkStepTime >= 22) {
+  /* ── 2. Blink Stepper (Slow heavy droop for sleepy, snappy for normal) ── */
+  const blinkInterval = currentMood === 'sleepy' ? 75 : 22;
+  if (timestamp - lastBlinkStepTime >= blinkInterval) {
     lastBlinkStepTime = timestamp;
     if (curBlink !== tgtBlink) {
-      if (tgtBlink > curBlink) {
+      if (currentMood === 'sleepy') {
+        curBlink += Math.sign(tgtBlink - curBlink);
+      } else if (tgtBlink > curBlink) {
         curBlink = Math.min(tgtBlink, curBlink + 3);
       } else {
         curBlink = Math.max(tgtBlink, curBlink - 2);
@@ -2345,7 +2437,8 @@ function animationLoop(timestamp) {
   }
 
   /* ── 3. Grid Gaze & Clock Slide Stepper ── */
-  if (timestamp - lastStepTime >= 36) {
+  const stepInterval = currentMood === 'sleepy' ? 68 : 36;
+  if (timestamp - lastStepTime >= stepInterval) {
     lastStepTime = timestamp;
 
     if (curLookX !== tgtLookX) {
@@ -2383,11 +2476,23 @@ function animationLoop(timestamp) {
     needsDraw = true;
   }
 
+  if (
+    idleConfig.showMouth !== false &&
+    currentMood === 'normal' &&
+    bouncePhase === 'none' &&
+    curEyeOffsetY > -21 &&
+    timestamp - lastMouthAnimTime >= 480
+  ) {
+    lastMouthAnimTime = timestamp;
+    mouthTick++;
+    needsDraw = true;
+  }
+
   if (needsDraw) drawEyes();
 }
 
 /* ── Natural Eye & Expressive Behavior Scheduler ── */
-const NON_BLINK_MOODS = ['happy', 'joy', 'angry', 'worried', 'wink', 'sleeping', 'shocked'];
+const NON_BLINK_MOODS = ['happy', 'joy', 'angry', 'worried', 'wink', 'sleeping', 'shocked', 'sleepy'];
 
 function triggerBlink(doubleBlink = false) {
   if (!isIdleActive || NON_BLINK_MOODS.includes(currentMood) || clockModeActive || bouncePhase !== 'none') return;
@@ -2427,6 +2532,7 @@ function startPixelClockSequence() {
   eyeScaleY = 1.0;
   curBlink = 0;
   tgtBlink = 0;
+  sleepyYawnStage = 'idle';
 
   currentMood = 'normal';
   tgtLookX = 0;
@@ -2468,45 +2574,97 @@ function startPixelClockSequence() {
   }, clockDisplayDurationMs));
 }
 
-/* ── Post-Sleep "Fighting Sleep -> Wake Up" Sequence ── */
+/* ── Sleepy Drift + Yawn Animation Sequence ── */
+function runSleepySequence(timersArray) {
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  sleepyYawnStage = 'idle';
+  tgtLookX = dir;
+  tgtLookY = 1;
+  curBlink = 0;
+  tgtBlink = 1;
+  tgtEyeOffsetY = 0;
+  drawEyes();
+
+  // Heavy eyelids droop lower as gaze drifts across
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'sleepy') return;
+    tgtLookX = -dir * 2;
+    tgtLookY = 2;
+    tgtBlink = 3;
+  }, 750));
+
+  // Start yawning & nod head down slightly
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'sleepy') return;
+    sleepyYawnStage = 'opening';
+    tgtBlink = 4;
+    tgtEyeOffsetY = 1;
+    drawEyes();
+  }, 1500));
+
+  // Peak wide yawn with eyes squeezed shut
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'sleepy') return;
+    sleepyYawnStage = 'wide';
+    tgtBlink = 5;
+    tgtLookX = 0;
+    tgtLookY = 2;
+    drawEyes();
+  }, 1900));
+
+  // Wind down yawn & lift eyes back up
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'sleepy') return;
+    sleepyYawnStage = 'closing';
+    tgtBlink = 2;
+    tgtEyeOffsetY = 0;
+    tgtLookX = dir;
+    tgtLookY = 1;
+    drawEyes();
+  }, 3150));
+
+  // Finish yawn, settle into heavy-lidded gaze + groggy blink
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'sleepy') return;
+    sleepyYawnStage = 'idle';
+    tgtBlink = 0;
+    drawEyes();
+  }, 3650));
+
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'sleepy') return;
+    tgtBlink = 4;
+  }, 4050));
+
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'sleepy') return;
+    tgtBlink = 0;
+    tgtLookX = 0;
+    tgtLookY = 1;
+  }, 4450));
+}
+
+/* ── Post-Sleep "Fighting Sleep -> Yawn -> Wake Up" Sequence ── */
 function startFightSleepSequence() {
   clearFightSleepTimers();
   if (!isIdleActive) return;
 
   currentMood = 'sleepy';
-  tgtLookX = 0;
-  tgtLookY = 1;
-  curBlink = 3;
-  tgtBlink = 2;
-  drawEyes();
-
-  fightSleepTimers.push(setTimeout(() => {
-    if (!isIdleActive) return;
-    tgtBlink = 6;
-  }, 1100));
-
-  fightSleepTimers.push(setTimeout(() => {
-    if (!isIdleActive) return;
-    tgtBlink = 0;
-    tgtLookY = 0;
-  }, 2000));
-
-  fightSleepTimers.push(setTimeout(() => {
-    if (!isIdleActive) return;
-    tgtBlink = 5;
-  }, 2700));
+  runSleepySequence(fightSleepTimers);
 
   fightSleepTimers.push(setTimeout(() => {
     if (!isIdleActive) return;
     currentMood = 'normal';
+    sleepyYawnStage = 'idle';
     curBlink = 0;
     tgtBlink = 0;
     tgtLookX = 0;
     tgtLookY = 0;
+    tgtEyeOffsetY = 0;
     drawEyes();
     triggerBlink(true);
     behaviorTimer = setTimeout(scheduleNextBehavior, 2000 + Math.random() * 1800);
-  }, 3400));
+  }, 5100));
 }
 
 function scheduleNextBehavior() {
@@ -2565,7 +2723,7 @@ function scheduleNextBehavior() {
       { mood: 'bored',      weight: 8  },
       { mood: 'worried',    weight: 7  },
       { mood: 'angry',      weight: 6  },
-      { mood: 'sleepy',     weight: 6  },
+      { mood: 'sleepy',     weight: 8  },
       { mood: 'sleeping',   weight: 6  },
       { mood: 'shocked',    weight: 2  }
     ];
@@ -2584,6 +2742,7 @@ function scheduleNextBehavior() {
     currentMood = chosenMood;
     curBlink = 0;
     tgtBlink = 0;
+    sleepyYawnStage = 'idle';
     clearBlinkTimers();
     clearMoodGlanceTimers();
     clearFightSleepTimers();
@@ -2616,8 +2775,7 @@ function scheduleNextBehavior() {
         tgtLookX = firstDir;
       }, 1950));
     } else if (chosenMood === 'sleepy') {
-      tgtLookX = 0;
-      tgtLookY = 1;
+      runSleepySequence(moodGlanceTimers);
     } else if (chosenMood === 'joy') {
       tgtLookX = Math.random() < 0.33 ? -1 : (Math.random() < 0.5 ? 1 : 0);
       tgtLookY = 0;
@@ -2638,16 +2796,20 @@ function scheduleNextBehavior() {
 
     const holdDuration = chosenMood === 'wink'
       ? 1800
-      : chosenMood === 'angry'
-        ? (3000 + Math.random() * 800)
-        : (2800 + Math.random() * 1400);
+      : chosenMood === 'sleepy'
+        ? 5100
+        : chosenMood === 'angry'
+          ? (3000 + Math.random() * 800)
+          : (2800 + Math.random() * 1400);
     behaviorTimer = setTimeout(() => {
       if (!isIdleActive) return;
       currentMood = 'normal';
+      sleepyYawnStage = 'idle';
       curBlink = 0;
       tgtBlink = 0;
       tgtLookX = 0;
       tgtLookY = 0;
+      tgtEyeOffsetY = 0;
       drawEyes();
       behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
     }, holdDuration);
@@ -2655,6 +2817,7 @@ function scheduleNextBehavior() {
   }
 
   currentMood = 'normal';
+  sleepyYawnStage = 'idle';
   curBlink = 0;
   tgtBlink = 0;
   if (roll < 0.22) {
@@ -2687,6 +2850,7 @@ function startIdleEyes() {
   resizeCanvas();
 
   currentMood = 'normal';
+  sleepyYawnStage = 'idle';
   curLookX = 0; curLookY = 0;
   tgtLookX = 0; tgtLookY = 0;
   curBlink = 0; tgtBlink = 0;
@@ -2699,6 +2863,8 @@ function startIdleEyes() {
   lookUpModeUntil = 0;
   lastMouseInsideTime = 0;
   lastPhysTime = 0;
+  mouthTick = 0;
+  lastMouthAnimTime = 0;
 
   drawEyes();
   idleOverlay.classList.add('active');
@@ -2719,6 +2885,7 @@ function stopIdleEyes() {
   clearTimeout(periodicClockTimer);
   clockModeActive = false;
   bouncePhase = 'none';
+  sleepyYawnStage = 'idle';
   eyeScaleX = 1.0; eyeScaleY = 1.0;
   curClockY = 23; tgtClockY = 23;
   curEyeOffsetY = 0; tgtEyeOffsetY = 0;
