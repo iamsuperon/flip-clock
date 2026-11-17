@@ -1179,6 +1179,13 @@ function clearClockSequenceTimers() {
   clockSequenceTimers = [];
 }
 
+function resetBubbleGumState() {
+  gumStage = 'none';
+  gumRadius = 0;
+  gumPopProgress = 0;
+  gumChewTick = 0;
+}
+
 function schedulePeriodicPixelClock() {
   clearTimeout(periodicClockTimer);
   if (!isIdleActive || !idleConfig.clockIntervalMins || idleConfig.clockIntervalMins <= 0) return;
@@ -1224,6 +1231,7 @@ function updateGazeFromPointer(clientX, clientY) {
   clearFightSleepTimers();
   clearBlinkTimers();
   sleepyYawnStage = 'idle';
+  resetBubbleGumState();
 
   if (clockModeActive || bouncePhase !== 'none') {
     clearClockSequenceTimers();
@@ -1281,6 +1289,7 @@ document.addEventListener('mouseleave', e => {
   clearFightSleepTimers();
   clearBlinkTimers();
   sleepyYawnStage = 'idle';
+  resetBubbleGumState();
 
   if (e.clientX <= 12) {
     currentMood = 'normal';
@@ -1330,6 +1339,12 @@ let behaviorTimer = null;
 let currentMood = 'normal';
 let winkEyeSide = 'right';
 let sleepyYawnStage = 'idle'; // 'idle' | 'opening' | 'wide' | 'closing'
+let gumStage = 'none';        // 'none' | 'chew' | 'blow' | 'pop'
+let gumRadius = 0;
+let gumPopProgress = 0;
+let gumChewTick = 0;
+let lastGumTickTime = 0;
+
 let curLookX = 0, curLookY = 0;
 let tgtLookX = 0, tgtLookY = 0;
 let curBlink = 0, tgtBlink = 0;
@@ -1452,7 +1467,7 @@ const ANGER_GLYPH = [
 ];
 
 // 5x4 Cute Pixel Mouth Masks (anchored at x = 20..24, y = 16..19)
-// '1' = bright LED mouth color, '2' = pink tongue accent
+// '1' = bright LED mouth color, '2' = pink tongue / bubble gum accent
 const MOUTH_MASKS = {
   normal: [
     "10001",
@@ -1496,12 +1511,6 @@ const MOUTH_MASKS = {
     "10001",
     "00000"
   ],
-  worried: [
-    "00000",
-    "01110",
-    "10001",
-    "00000"
-  ],
   sleepy: [
     "00100",
     "01010",
@@ -1515,6 +1524,34 @@ const MOUTH_MASKS = {
     "01110"
   ]
 };
+
+// Chewing pink bubble gum frames ('1' = lip, '2' = pink gum)
+const GUM_CHEW_FRAMES = [
+  [
+    "00000",
+    "12221",
+    "01110",
+    "00000"
+  ],
+  [
+    "00000",
+    "01110",
+    "00000",
+    "00000"
+  ],
+  [
+    "00000",
+    "11221",
+    "00110",
+    "00000"
+  ],
+  [
+    "00000",
+    "12211",
+    "01100",
+    "00000"
+  ]
+];
 
 // Yawning stages for 'sleepy' expression
 const SLEEPY_YAWN_MASKS = {
@@ -1769,8 +1806,9 @@ function drawEyes() {
     ctx.restore();
   }
 
-  const socketShiftX = (Math.abs(curLookX) >= 2 || (currentMood === 'sleepy' && curLookX !== 0)) ? Math.sign(curLookX) : 0;
-  const socketShiftY = (Math.abs(curLookY) >= 2 || (currentMood === 'sleepy' && curLookY >= 2)) ? Math.sign(curLookY) : 0;
+  const isMovingSocketMood = currentMood === 'sleepy' || currentMood === 'bored';
+  const socketShiftX = (Math.abs(curLookX) >= 2 || (isMovingSocketMood && curLookX !== 0)) ? Math.sign(curLookX) : 0;
+  const socketShiftY = (Math.abs(curLookY) >= 2 || (isMovingSocketMood && curLookY !== 0)) ? Math.sign(curLookY) : 0;
 
   if (curEyeOffsetY > -21) {
     const isDeformed = bouncePhase !== 'none' || Math.abs(eyeScaleX - 1) > 0.015 || Math.abs(eyeScaleY - 1) > 0.015;
@@ -1840,6 +1878,32 @@ function drawEyes() {
         const halfWidth = (lidRow <= -2 || lidRow >= 3) ? 5 : 6;
         for (let dx = -halfWidth; dx <= halfWidth; dx++) {
           lightLED(scx + dx, scy + lidRow, lidColor, true);
+        }
+      }
+    }
+
+    function renderShockedEye(baseCx, baseCy, isRightEye, withJitter = true) {
+      const jitterX = (withJitter && zzzTick % 2 !== 0) ? (isRightEye ? 1 : -1) : 0;
+      for (let r = 0; r < 16; r++) {
+        const dy = r - 8;
+        const normY = r / 15;
+        const shadedIris = shadeColor(idleConfig.eyeColor, 0.7 + normY * 0.75);
+        for (let c = 0; c < 15; c++) {
+          if (SHOCKED_SOCKET[r][c] !== '1') continue;
+          const dx = c - 7;
+          const gx = baseCx + dx + jitterX;
+          const gy = baseCy + curEyeOffsetY + dy;
+
+          const inTinyPupil = Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
+          const isSparkle = (dx === -2 && dy === -2);
+
+          if (isSparkle) {
+            lightLED(gx, gy, '#ffffff', true);
+          } else if (inTinyPupil) {
+            lightLED(gx, gy, idleConfig.pupilColor, false);
+          } else {
+            lightLED(gx, gy, shadedIris, true);
+          }
         }
       }
     }
@@ -2014,42 +2078,7 @@ function drawEyes() {
         return;
       }
 
-      /* ── 5. WORRIED / DOWNCAST (Outward-sloping lids WITH pupils) ── */
-      if (currentMood === 'worried') {
-        const ey = Math.round(baseCy + curEyeOffsetY);
-        const pcx = Math.round(baseCx + curLookX);
-        const pcy = Math.round(ey + 3);
-        for (let r = 0; r < 14; r++) {
-          const dy = r - 7;
-          const normY = r / 13;
-          const col = shadeColor(idleConfig.eyeColor, 0.8 + normY * 0.55);
-          for (let c = 0; c < 13; c++) {
-            if (SOCKET_MASK[r][c] !== '1') continue;
-            const dx = c - 6;
-            const outerDist = isRightEye ? dx : -dx;
-            const lidCut = Math.floor((outerDist + 1) * 0.45);
-            if (dy < lidCut) continue;
-
-            const gx = baseCx + dx;
-            const gy = ey + dy;
-            const pdx = gx - pcx;
-            const pdy = gy - pcy;
-            const inPupil = (pdx * pdx) / 6.25 + (pdy * pdy) / 6.25 <= 1.0;
-            const isGlint = (pdx === -1 && pdy === -1);
-
-            if (isGlint) {
-              lightLED(gx, gy, '#ffffff', true);
-            } else if (inPupil) {
-              lightLED(gx, gy, idleConfig.pupilColor, false);
-            } else {
-              lightLED(gx, gy, col, true);
-            }
-          }
-        }
-        return;
-      }
-
-      /* ── 6. WINK (Self-contained: one arch + one guaranteed wide-open eye) ── */
+      /* ── 5. WINK (Self-contained: one arch + one guaranteed wide-open eye) ── */
       if (currentMood === 'wink') {
         const isClosedEye = (isRightEye && winkEyeSide === 'right') || (!isRightEye && winkEyeSide === 'left');
         if (isClosedEye) {
@@ -2069,7 +2098,7 @@ function drawEyes() {
         return;
       }
 
-      /* ── 7. SLEEPING (Peaceful curved closed lids + floating Zzz, NO pupils) ── */
+      /* ── 6. SLEEPING (Peaceful curved closed lids + floating Zzz, NO pupils) ── */
       if (currentMood === 'sleeping') {
         const sleepColor = shadeColor(idleConfig.eyeColor, 0.95);
         const sleepLid = [
@@ -2100,35 +2129,32 @@ function drawEyes() {
         return;
       }
 
-      /* ── 8. SHOCKED (Wide O_O eyes + tiny contracted pupils + subtle 1px tremor) ── */
+      /* ── 7. SHOCKED (Wide O_O eyes + tiny contracted pupils + subtle 1px tremor) ── */
       if (currentMood === 'shocked') {
-        const jitterX = (zzzTick % 2 === 0) ? 0 : (isRightEye ? 1 : -1);
-        for (let r = 0; r < 16; r++) {
-          const dy = r - 8;
-          const normY = r / 15;
-          const shadedIris = shadeColor(idleConfig.eyeColor, 0.7 + normY * 0.75);
-          for (let c = 0; c < 15; c++) {
-            if (SHOCKED_SOCKET[r][c] !== '1') continue;
-            const dx = c - 7;
-            const gx = baseCx + dx + jitterX;
-            const gy = baseCy + curEyeOffsetY + dy;
-
-            const inTinyPupil = Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
-            const isSparkle = (dx === -2 && dy === -2);
-
-            if (isSparkle) {
-              lightLED(gx, gy, '#ffffff', true);
-            } else if (inTinyPupil) {
-              lightLED(gx, gy, idleConfig.pupilColor, false);
-            } else {
-              lightLED(gx, gy, shadedIris, true);
-            }
-          }
-        }
+        renderShockedEye(baseCx, baseCy, isRightEye, true);
         return;
       }
 
-      /* ── 9. NORMAL / BLINK / BORED / SLEEPY ── */
+      /* ── 8. BUBBLEGUM REACTIONS ── */
+      if (currentMood === 'bubblegum') {
+        if (gumStage === 'blow' && gumRadius >= 7) {
+          renderShockedEye(baseCx, baseCy, isRightEye, false);
+          return;
+        }
+        if (gumStage === 'pop') {
+          if (gumPopProgress < 0.16) {
+            const lidColor = shadeColor(idleConfig.eyeColor, 1.2);
+            for (let dx = -5; dx <= 5; dx++) {
+              lightLED(baseCx + dx, baseCy + 2, lidColor, true);
+            }
+          } else {
+            renderShockedEye(baseCx, baseCy, isRightEye, false);
+          }
+          return;
+        }
+      }
+
+      /* ── 9. NORMAL / BLINK / BORED / SLEEPY / CHEWING ── */
       renderNormalOpenEye(scx, scy);
     }
 
@@ -2139,13 +2165,49 @@ function drawEyes() {
     if (idleConfig.showMouth !== false) {
       const isNormalMouth = !isDeformed && currentMood === 'normal';
       const isSleepyMouth = !isDeformed && currentMood === 'sleepy';
-      const mouthShiftX = isNormalMouth ? curLookX : (isSleepyMouth ? Math.sign(curLookX) : 0);
+      const isBoredMouth  = !isDeformed && currentMood === 'bored';
+      const mouthShiftX = isNormalMouth
+        ? curLookX
+        : ((isSleepyMouth || isBoredMouth) ? Math.sign(curLookX) : 0);
       const mouthShiftY = isNormalMouth ? Math.sign(curLookY) : 0;
       const mx = 20 + mouthShiftX;
       const my = Math.round(16 + curEyeOffsetY) + mouthShiftY;
       const mouthColor = shadeColor(idleConfig.eyeColor, 1.3);
 
-      if (isNormalMouth) {
+      if (currentMood === 'bubblegum') {
+        if (gumStage === 'chew') {
+          const frame = GUM_CHEW_FRAMES[gumChewTick % GUM_CHEW_FRAMES.length];
+          const chewBounceY = (gumChewTick % 2 === 1) ? 1 : 0;
+          for (let r = 0; r < frame.length; r++) {
+            for (let c = 0; c < frame[r].length; c++) {
+              const cell = frame[r][c];
+              if (cell === '1') {
+                lightLED(20 + c, 16 + chewBounceY + r, mouthColor, true);
+              } else if (cell === '2') {
+                lightLED(20 + c, 16 + chewBounceY + r, '#ff66a3', true);
+              }
+            }
+          }
+        } else if (gumStage === 'blow') {
+          const puckerMask = ["01110", "10001", "01110", "00000"];
+          for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 5; c++) {
+              if (puckerMask[r][c] === '1') {
+                lightLED(20 + c, 16 + r, mouthColor, true);
+              }
+            }
+          }
+        } else if (gumStage === 'pop') {
+          const shockMask = MOUTH_MASKS.shocked;
+          for (let r = 0; r < shockMask.length; r++) {
+            for (let c = 0; c < shockMask[r].length; c++) {
+              if (shockMask[r][c] === '1') {
+                lightLED(20 + c, 16 + r, mouthColor, true);
+              }
+            }
+          }
+        }
+      } else if (isNormalMouth) {
         // Subtle cute idle cycle exclusively for the normal U-smile mouth
         const step = mouthTick % 10;
         const frameIdx = (step === 3 || step === 7) ? 1 : (step === 8 ? 2 : 0);
@@ -2201,6 +2263,70 @@ function drawEyes() {
               }
             }
           }
+        }
+      }
+    }
+
+    /* ── PINK BUBBLE GUM INFLATION & POP OVERLAY ── */
+    if (currentMood === 'bubblegum') {
+      if (gumStage === 'blow' && gumRadius > 0.3) {
+        const bcx = 22.5;
+        const bcy = 17.5;
+        const r2 = gumRadius * gumRadius;
+        const innerR2 = Math.max(0, (gumRadius - 1.35) * (gumRadius - 1.35));
+
+        for (let gy = 0; gy < rows; gy++) {
+          for (let gx = 0; gx < cols; gx++) {
+            const dx = gx - bcx;
+            const dy = gy - bcy;
+            const d2 = dx * dx + dy * dy;
+            if (d2 > r2) continue;
+
+            const nx = dx / gumRadius;
+            const ny = dy / gumRadius;
+
+            // Glossy white highlight on upper-left curve of the bubble
+            const isSpec = gumRadius >= 2.2 && (
+              (Math.abs(nx + 0.42) < 0.16 && Math.abs(ny + 0.42) < 0.16) ||
+              (gumRadius >= 5 && Math.abs(nx + 0.25) < 0.11 && Math.abs(ny + 0.56) < 0.11)
+            );
+
+            if (isSpec) {
+              lightLED(gx, gy, '#ffffff', true);
+            } else if (d2 > innerR2 && (nx + ny > 0.2)) {
+              lightLED(gx, gy, '#d9387a', true);
+            } else if (nx < -0.15 && ny < -0.15) {
+              lightLED(gx, gy, '#ff8cc0', true);
+            } else {
+              lightLED(gx, gy, '#ff5ca1', true);
+            }
+          }
+        }
+      } else if (gumStage === 'pop') {
+        const bcx = 22.5;
+        const bcy = 11.5;
+        const rays = 14;
+        const travel = 4 + gumPopProgress * 24;
+
+        for (let i = 0; i < rays; i++) {
+          const angle = (i / rays) * Math.PI * 2 + 0.2;
+          const dist1 = travel;
+          const dist2 = travel - 2.2;
+          const px1 = Math.round(bcx + Math.cos(angle) * dist1);
+          const py1 = Math.round(bcy + Math.sin(angle) * dist1 * 0.72);
+          lightLED(px1, py1, i % 3 === 0 ? '#ff99c8' : '#ff5ca1', true);
+
+          if (gumPopProgress < 0.65) {
+            const px2 = Math.round(bcx + Math.cos(angle) * dist2);
+            const py2 = Math.round(bcy + Math.sin(angle) * dist2 * 0.72);
+            lightLED(px2, py2, '#d9387a', true);
+          }
+        }
+
+        // Cute tiny pink gum specks stuck on cheeks right after pop
+        if (gumPopProgress >= 0.15 && gumPopProgress < 0.85) {
+          lightLED(6, 15, '#ff66a3', true);
+          lightLED(39, 14, '#ff66a3', true);
         }
       }
     }
@@ -2488,11 +2614,32 @@ function animationLoop(timestamp) {
     needsDraw = true;
   }
 
+  /* ── 4. Bubble Gum Chewing, Inflation & Pop Physics ── */
+  if (currentMood === 'bubblegum' && bouncePhase === 'none' && curEyeOffsetY > -21) {
+    if (gumStage === 'chew' && timestamp - lastGumTickTime >= 210) {
+      lastGumTickTime = timestamp;
+      gumChewTick++;
+      needsDraw = true;
+    } else if (gumStage === 'blow') {
+      const growRate = 4.2 + gumRadius * 0.42;
+      gumRadius += growRate * dt;
+      if (gumRadius >= 29.8) {
+        gumRadius = 29.8;
+        gumStage = 'pop';
+        gumPopProgress = 0;
+      }
+      needsDraw = true;
+    } else if (gumStage === 'pop') {
+      gumPopProgress = Math.min(1, gumPopProgress + dt / 0.85);
+      needsDraw = true;
+    }
+  }
+
   if (needsDraw) drawEyes();
 }
 
 /* ── Natural Eye & Expressive Behavior Scheduler ── */
-const NON_BLINK_MOODS = ['happy', 'joy', 'angry', 'worried', 'wink', 'sleeping', 'shocked', 'sleepy'];
+const NON_BLINK_MOODS = ['happy', 'joy', 'angry', 'wink', 'sleeping', 'shocked', 'sleepy', 'bubblegum'];
 
 function triggerBlink(doubleBlink = false) {
   if (!isIdleActive || NON_BLINK_MOODS.includes(currentMood) || clockModeActive || bouncePhase !== 'none') return;
@@ -2533,6 +2680,7 @@ function startPixelClockSequence() {
   curBlink = 0;
   tgtBlink = 0;
   sleepyYawnStage = 'idle';
+  resetBubbleGumState();
 
   currentMood = 'normal';
   tgtLookX = 0;
@@ -2574,6 +2722,86 @@ function startPixelClockSequence() {
   }, clockDisplayDurationMs));
 }
 
+/* ── Moving Bored Eye-Roll Sequence ── */
+function runBoredSequence(timersArray) {
+  const dir = Math.random() < 0.5 ? -1 : 1;
+  tgtLookX = dir * 2;
+  tgtLookY = 0;
+  curBlink = 0;
+  tgtBlink = 0;
+  drawEyes();
+
+  // Roll eyeballs up and across
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'bored') return;
+    tgtLookX = -dir;
+    tgtLookY = -2;
+  }, 850));
+
+  // Glance far to the other side
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'bored') return;
+    tgtLookX = -dir * 2;
+    tgtLookY = 1;
+  }, 1700));
+
+  // Slow unimpressed blink & sigh downward
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'bored') return;
+    tgtBlink = 3;
+    tgtLookX = dir;
+    tgtLookY = 1;
+  }, 2450));
+
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'bored') return;
+    tgtBlink = 0;
+  }, 2700));
+}
+
+/* ── Bubble Gum Chewing -> Fullscreen Blow -> Pop Sequence ── */
+function runBubbleGumSequence(timersArray) {
+  gumStage = 'chew';
+  gumRadius = 0;
+  gumPopProgress = 0;
+  gumChewTick = 0;
+  lastGumTickTime = performance.now();
+  curBlink = 0;
+  tgtBlink = 0;
+  tgtLookX = Math.random() < 0.5 ? -1 : 1;
+  tgtLookY = 1;
+  drawEyes();
+
+  // Glance to other side while chewing
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'bubblegum') return;
+    tgtLookX = -tgtLookX;
+    tgtLookY = 0;
+  }, 1050));
+
+  // Look down at mouth and start blowing the pink bubble
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'bubblegum') return;
+    gumStage = 'blow';
+    gumRadius = 0.8;
+    tgtLookX = 0;
+    tgtLookY = 2;
+    drawEyes();
+  }, 2100));
+
+  // After fullscreen pop settles, smile happily before returning to normal
+  timersArray.push(setTimeout(() => {
+    if (!isIdleActive || currentMood !== 'bubblegum') return;
+    resetBubbleGumState();
+    currentMood = 'happy';
+    curLookX = 0;
+    tgtLookX = 0;
+    curLookY = 0;
+    tgtLookY = 0;
+    drawEyes();
+  }, 6350));
+}
+
 /* ── Sleepy Drift + Yawn Animation Sequence ── */
 function runSleepySequence(timersArray) {
   const dir = Math.random() < 0.5 ? 1 : -1;
@@ -2585,7 +2813,6 @@ function runSleepySequence(timersArray) {
   tgtEyeOffsetY = 0;
   drawEyes();
 
-  // Heavy eyelids droop lower as gaze drifts across
   timersArray.push(setTimeout(() => {
     if (!isIdleActive || currentMood !== 'sleepy') return;
     tgtLookX = -dir * 2;
@@ -2593,7 +2820,6 @@ function runSleepySequence(timersArray) {
     tgtBlink = 3;
   }, 750));
 
-  // Start yawning & nod head down slightly
   timersArray.push(setTimeout(() => {
     if (!isIdleActive || currentMood !== 'sleepy') return;
     sleepyYawnStage = 'opening';
@@ -2602,7 +2828,6 @@ function runSleepySequence(timersArray) {
     drawEyes();
   }, 1500));
 
-  // Peak wide yawn with eyes squeezed shut
   timersArray.push(setTimeout(() => {
     if (!isIdleActive || currentMood !== 'sleepy') return;
     sleepyYawnStage = 'wide';
@@ -2612,7 +2837,6 @@ function runSleepySequence(timersArray) {
     drawEyes();
   }, 1900));
 
-  // Wind down yawn & lift eyes back up
   timersArray.push(setTimeout(() => {
     if (!isIdleActive || currentMood !== 'sleepy') return;
     sleepyYawnStage = 'closing';
@@ -2623,7 +2847,6 @@ function runSleepySequence(timersArray) {
     drawEyes();
   }, 3150));
 
-  // Finish yawn, settle into heavy-lidded gaze + groggy blink
   timersArray.push(setTimeout(() => {
     if (!isIdleActive || currentMood !== 'sleepy') return;
     sleepyYawnStage = 'idle';
@@ -2720,8 +2943,8 @@ function scheduleNextBehavior() {
       { mood: 'wink',       weight: 10 },
       { mood: 'joy',        weight: 10 },
       { mood: 'suspicious', weight: 10 },
+      { mood: 'bubblegum',  weight: 9  },
       { mood: 'bored',      weight: 8  },
-      { mood: 'worried',    weight: 7  },
       { mood: 'angry',      weight: 6  },
       { mood: 'sleepy',     weight: 8  },
       { mood: 'sleeping',   weight: 6  },
@@ -2743,6 +2966,7 @@ function scheduleNextBehavior() {
     curBlink = 0;
     tgtBlink = 0;
     sleepyYawnStage = 'idle';
+    resetBubbleGumState();
     clearBlinkTimers();
     clearMoodGlanceTimers();
     clearFightSleepTimers();
@@ -2752,8 +2976,9 @@ function scheduleNextBehavior() {
       tgtLookX = winkEyeSide === 'right' ? 1 : -1;
       tgtLookY = -1;
     } else if (chosenMood === 'bored') {
-      tgtLookX = Math.random() < 0.5 ? -2 : 2;
-      tgtLookY = 0;
+      runBoredSequence(moodGlanceTimers);
+    } else if (chosenMood === 'bubblegum') {
+      runBubbleGumSequence(moodGlanceTimers);
     } else if (chosenMood === 'suspicious') {
       const firstDir = Math.random() < 0.5 ? -2 : 2;
       tgtLookX = firstDir;
@@ -2796,15 +3021,20 @@ function scheduleNextBehavior() {
 
     const holdDuration = chosenMood === 'wink'
       ? 1800
-      : chosenMood === 'sleepy'
-        ? 5100
-        : chosenMood === 'angry'
-          ? (3000 + Math.random() * 800)
-          : (2800 + Math.random() * 1400);
+      : chosenMood === 'bubblegum'
+        ? 7600
+        : chosenMood === 'sleepy'
+          ? 5100
+          : chosenMood === 'bored'
+            ? 3400
+            : chosenMood === 'angry'
+              ? (3000 + Math.random() * 800)
+              : (2800 + Math.random() * 1400);
     behaviorTimer = setTimeout(() => {
       if (!isIdleActive) return;
       currentMood = 'normal';
       sleepyYawnStage = 'idle';
+      resetBubbleGumState();
       curBlink = 0;
       tgtBlink = 0;
       tgtLookX = 0;
@@ -2818,6 +3048,7 @@ function scheduleNextBehavior() {
 
   currentMood = 'normal';
   sleepyYawnStage = 'idle';
+  resetBubbleGumState();
   curBlink = 0;
   tgtBlink = 0;
   if (roll < 0.22) {
@@ -2851,6 +3082,7 @@ function startIdleEyes() {
 
   currentMood = 'normal';
   sleepyYawnStage = 'idle';
+  resetBubbleGumState();
   curLookX = 0; curLookY = 0;
   tgtLookX = 0; tgtLookY = 0;
   curBlink = 0; tgtBlink = 0;
@@ -2886,6 +3118,7 @@ function stopIdleEyes() {
   clockModeActive = false;
   bouncePhase = 'none';
   sleepyYawnStage = 'idle';
+  resetBubbleGumState();
   eyeScaleX = 1.0; eyeScaleY = 1.0;
   curClockY = 23; tgtClockY = 23;
   curEyeOffsetY = 0; tgtEyeOffsetY = 0;
