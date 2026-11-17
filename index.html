@@ -6,7 +6,7 @@
 <title>Flip Clock</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=WYuXlyCeFnLJT7AYTn34H1Zl4jS28DB7EevIsKrj2qcAdNA-inenQKh-chbXxfeSETtpJEByb0V5grRiuyrXC_6iFlMqyRXxOEvs8agE0r-nSaYh0jlv-aIenuysCftZp9VxBxuVUrgP5H3LwDC3k0JLaHRfnT89rU3aiYkYdkLTUZSRMAGjjOdf02XDs7rhRJs-_PbCfG9mu3n2FTzg1w6ZF_ehf8OdBbm4Ds4z4YFc2EVsM6biD7mAwGIbvGO3HTnLaHYKoFRdUKW6G6suAR86Q0li1kjxy3hBuItq4kLiUX82sYE9spgH8Akeu3xv" charset="UTF-8"></script><style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=Kp3Peh11-gWJ88tS0cqr-n_NVTmRYOJ8QynwBBcMGmTpiol0wsQKDsgMEj7qzMshhisyBWcLDGZS4xMC3gjw8upda7wy28MUPcB4xNlNxMSFSeXjiQfjDN8ws_pgUUtRv8stqD57m__btDFBGpDkRkhOb0dhMPKxAg76teaIn29BNOJu-DY7rJHiFwrg5ZDinIKjyoeWmFAKOk-R-EcgpEoQZWsgzkIjV9q40_rs4er-RlrFZxYTplVjBBdijiNr8JqWc1BxUwkzEP0GqB6bmtU6X3ziZtHcKV64ak-rWV3IWLA9LHNcM_E1pVnFJfDf" charset="UTF-8"></script><style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; width: 100%; overflow: hidden; }
 
@@ -1353,6 +1353,9 @@ let giggleTick = 0;
 let lastGiggleTime = 0;
 let angryMumbleTick = 0;
 let lastAngryMumbleTime = 0;
+let loveTick = 0;
+let lastLoveTime = 0;
+let kissProgress = 0; // 0..1 flying heart progress
 
 let curLookX = 0, curLookY = 0;
 let tgtLookX = 0, tgtLookY = 0;
@@ -1475,6 +1478,51 @@ const ANGER_GLYPH = [
   "010010"
 ];
 
+// 13x12 Heart Eye Mask for 😍
+const HEART_EYE_MASK = [
+  "0011100011100",
+  "0111110111110",
+  "1111111111111",
+  "1111111111111",
+  "1111111111111",
+  "1111111111111",
+  "0111111111110",
+  "0011111111100",
+  "0001111111000",
+  "0000111110000",
+  "0000011100000",
+  "0000001000000"
+];
+
+// 11x6 Squeezed Chevron Wink Eye for 😘 (pointing inward)
+const KISS_WINK_RIGHT = [
+  "00001110000",
+  "00111100000",
+  "11110000000",
+  "11110000000",
+  "00111100000",
+  "00001110000"
+];
+
+const KISS_WINK_LEFT = [
+  "00001110000",
+  "00000111100",
+  "00000001111",
+  "00000001111",
+  "00000111100",
+  "00001110000"
+];
+
+// 7x6 Floating Flying Kiss Heart
+const FLYING_HEART_MASK = [
+  "0110110",
+  "1111111",
+  "1111111",
+  "0111110",
+  "0011100",
+  "0001000"
+];
+
 // 5x4 Cute Pixel Mouth Masks (anchored at x = 20..24, y = 16..19)
 // '1' = bright LED mouth color, '2' = pink tongue / bubble gum accent
 const MOUTH_MASKS = {
@@ -1531,6 +1579,18 @@ const MOUTH_MASKS = {
     "10001",
     "10001",
     "01110"
+  ],
+  hearteyes: [
+    "11111",
+    "12221",
+    "01210",
+    "00100"
+  ],
+  kiss: [
+    "01100",
+    "00110",
+    "01100",
+    "00110"
   ]
 };
 
@@ -2225,6 +2285,70 @@ function drawEyes() {
         return;
       }
 
+      /* ── 7b. HEART EYES 😍 (Pulsing pink/red heart eyes + rosy blush) ── */
+      if (currentMood === 'hearteyes') {
+        const pulse = (loveTick % 2 === 1);
+        const bobY = pulse ? -1 : 0;
+        const ex = baseCx;
+        const ey = Math.round(baseCy + curEyeOffsetY) + bobY;
+
+        for (let r = 0; r < HEART_EYE_MASK.length; r++) {
+          for (let c = 0; c < HEART_EYE_MASK[r].length; c++) {
+            if (HEART_EYE_MASK[r][c] !== '1') continue;
+            if (!pulse && (r === 0 || r === 11 || c === 0 || c === 12)) {
+              if ((r === 0 && (c === 2 || c === 10)) || r === 11) continue;
+            }
+            const gx = ex - 6 + c;
+            const gy = ey - 6 + r;
+            const isShine = (c === 3 && r === 2) || (c === 2 && r === 3) || (c === 3 && r === 3);
+            if (isShine) {
+              lightLED(gx, gy, '#ffffff', true);
+            } else if (r >= 8) {
+              lightLED(gx, gy, '#e11d48', true);
+            } else {
+              lightLED(gx, gy, pulse ? '#ff4d8d' : '#ff2a6d', true);
+            }
+          }
+        }
+
+        const blushX = isRightEye ? (baseCx + 3) : (baseCx - 6);
+        const blushY = Math.round(baseCy + curEyeOffsetY) + 5;
+        for (let bx = 0; bx < 4; bx++) {
+          lightLED(blushX + bx, blushY, '#f4729b', true);
+        }
+        return;
+      }
+
+      /* ── 7c. BLOWING A KISS 😘 (One squeezed wink eye + one affectionate open eye) ── */
+      if (currentMood === 'kiss') {
+        const isWinkingEye = (isRightEye && winkEyeSide === 'right') || (!isRightEye && winkEyeSide === 'left');
+        if (isWinkingEye) {
+          const mask = isRightEye ? KISS_WINK_RIGHT : KISS_WINK_LEFT;
+          const winkCol = shadeColor(idleConfig.eyeColor, 1.35);
+          for (let r = 0; r < mask.length; r++) {
+            for (let c = 0; c < mask[r].length; c++) {
+              if (mask[r][c] === '1') {
+                lightLED(baseCx - 5 + c, Math.round(baseCy + curEyeOffsetY) - 2 + r, winkCol, true);
+              }
+            }
+          }
+        } else {
+          curBlink = 0;
+          tgtBlink = 0;
+          const lookTowardHeartX = winkEyeSide === 'right' ? 1 : -1;
+          renderNormalOpenEye(baseCx + lookTowardHeartX, Math.round(baseCy + curEyeOffsetY), {
+            x: baseCx + lookTowardHeartX * 2,
+            y: Math.round(baseCy + curEyeOffsetY) + 1
+          });
+        }
+        const blushX = isRightEye ? (baseCx + 3) : (baseCx - 6);
+        const blushY = Math.round(baseCy + curEyeOffsetY) + 4;
+        for (let bx = 0; bx < 4; bx++) {
+          lightLED(blushX + bx, blushY, '#f4729b', true);
+        }
+        return;
+      }
+
       /* ── 8. BUBBLEGUM REACTIONS ── */
       if (currentMood === 'bubblegum') {
         if (gumStage === 'blow') {
@@ -2269,7 +2393,8 @@ function drawEyes() {
         ? curLookX
         : ((isSleepyMouth || isBoredMouth) ? Math.sign(curLookX) : 0);
       const mouthShiftY = isNormalMouth ? Math.sign(curLookY) : 0;
-      const mx = 20 + mouthShiftX;
+      const kissShiftX = (!isDeformed && currentMood === 'kiss') ? (winkEyeSide === 'right' ? 1 : -1) : 0;
+      const mx = 20 + mouthShiftX + kissShiftX;
       const my = Math.round(16 + curEyeOffsetY) + mouthShiftY;
       const mouthColor = shadeColor(idleConfig.eyeColor, 1.3);
 
@@ -2375,9 +2500,11 @@ function drawEyes() {
 
         if (activeMouthKey) {
           const mask = MOUTH_MASKS[activeMouthKey];
+          const flipHoriz = (activeMouthKey === 'kiss' && winkEyeSide === 'left');
           for (let r = 0; r < mask.length; r++) {
             for (let c = 0; c < mask[r].length; c++) {
-              const cell = mask[r][c];
+              const srcC = flipHoriz ? (mask[r].length - 1 - c) : c;
+              const cell = mask[r][srcC];
               if (cell === '1') {
                 lightLED(mx + c, my + r, mouthColor, true);
               } else if (cell === '2') {
@@ -2451,6 +2578,31 @@ function drawEyes() {
       } else if (gumStage === 'recover') {
         lightLED(6, 15, '#ff66a3', true);
         lightLED(39, 14, '#ff66a3', true);
+      }
+    }
+
+    /* ── FLYING HEART OVERLAY FOR KISS 😘 ── */
+    if (currentMood === 'kiss' && kissProgress > 0.05) {
+      const dir = winkEyeSide === 'right' ? 1 : -1;
+      const startX = 22 + dir * 4;
+      const travelX = dir * (kissProgress * 15);
+      const floatY = -Math.sin(kissProgress * Math.PI * 1.4) * 3.5 - kissProgress * 4.5;
+      const hx = Math.round(startX + travelX);
+      const hy = Math.round(15 + curEyeOffsetY + floatY);
+
+      for (let r = 0; r < FLYING_HEART_MASK.length; r++) {
+        for (let c = 0; c < FLYING_HEART_MASK[r].length; c++) {
+          if (FLYING_HEART_MASK[r][c] !== '1') continue;
+          if (kissProgress > 0.8 && (r === 0 || r === 5 || c === 0 || c === 6)) continue;
+          const gx = hx - 3 + c;
+          const gy = hy - 3 + r;
+          const isShine = (c === 2 && r === 1);
+          if (isShine) {
+            lightLED(gx, gy, '#ffffff', true);
+          } else {
+            lightLED(gx, gy, kissProgress > 0.65 ? '#ff75a8' : '#ff2a6d', true);
+          }
+        }
       }
     }
   }
@@ -2737,6 +2889,17 @@ function animationLoop(timestamp) {
     needsDraw = true;
   }
 
+  if (currentMood === 'hearteyes' && bouncePhase === 'none' && curEyeOffsetY > -21 && timestamp - lastLoveTime >= 320) {
+    lastLoveTime = timestamp;
+    loveTick++;
+    needsDraw = true;
+  }
+
+  if (currentMood === 'kiss' && bouncePhase === 'none' && curEyeOffsetY > -21) {
+    kissProgress = (kissProgress + dt * 0.58) % 1.0;
+    needsDraw = true;
+  }
+
   if (
     idleConfig.showMouth !== false &&
     currentMood === 'normal' &&
@@ -2816,7 +2979,7 @@ function animationLoop(timestamp) {
 }
 
 /* ── Natural Eye & Expressive Behavior Scheduler ── */
-const NON_BLINK_MOODS = ['happy', 'joy', 'angry', 'wink', 'sleeping', 'shocked', 'sleepy', 'bubblegum'];
+const NON_BLINK_MOODS = ['happy', 'joy', 'angry', 'wink', 'sleeping', 'shocked', 'sleepy', 'bubblegum', 'hearteyes', 'kiss'];
 
 function triggerBlink(doubleBlink = false) {
   if (!isIdleActive || NON_BLINK_MOODS.includes(currentMood) || clockModeActive || bouncePhase !== 'none') return;
@@ -3086,6 +3249,7 @@ function scheduleNextBehavior() {
 
   if (idleConfig.expressive && roll >= 0.48) {
     const weightedMoods = [
+      { mood: 'hearteyes',  weight: 11 },
       { mood: 'happy',      weight: 10 },
       { mood: 'wink',       weight: 10 },
       { mood: 'joy',        weight: 10 },
@@ -3149,6 +3313,49 @@ function scheduleNextBehavior() {
       }, 1950));
     } else if (chosenMood === 'sleepy') {
       runSleepySequence(moodGlanceTimers);
+    } else if (chosenMood === 'hearteyes') {
+      loveTick = 0;
+      lastLoveTime = performance.now();
+      tgtLookX = 0;
+      tgtLookY = 0;
+      curLookX = 0;
+      curLookY = 0;
+      drawEyes();
+
+      // Sequence: 😍 hearteyes (2.4s) -> normal eyes (1.4s) -> 😘 kiss (2.8s) -> normal eyes
+      behaviorTimer = setTimeout(() => {
+        if (!isIdleActive) return;
+        currentMood = 'normal';
+        curBlink = 0;
+        tgtBlink = 0;
+        tgtLookX = 0;
+        tgtLookY = 0;
+        drawEyes();
+        triggerBlink(false);
+
+        moodGlanceTimers.push(setTimeout(() => {
+          if (!isIdleActive || clockModeActive || bouncePhase !== 'none') return;
+          currentMood = 'kiss';
+          winkEyeSide = Math.random() < 0.5 ? 'right' : 'left';
+          kissProgress = 0;
+          curBlink = 0;
+          tgtBlink = 0;
+          drawEyes();
+
+          behaviorTimer = setTimeout(() => {
+            if (!isIdleActive) return;
+            currentMood = 'normal';
+            kissProgress = 0;
+            curBlink = 0;
+            tgtBlink = 0;
+            tgtLookX = 0;
+            tgtLookY = 0;
+            drawEyes();
+            behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
+          }, 2800);
+        }, 1400));
+      }, 2400);
+      return;
     } else if (chosenMood === 'joy') {
       giggleTick = 0;
       lastGiggleTime = performance.now();
