@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=bZGc6b1MUro18Ulr2jqtQADFl3JLimSAmg0e_smaYmTDwoe2D63S_z0IUoSdM-Rxox6XDVvf21aJqm0whkUj4hBpsJRDhsoQgYcFB4tSF6DeUcLi1R2E4reqH0kVdbFYVhpxBXKa_qtXkl3U2xsWppHz7Xv35WjkhbUfPuSoAbcPClJYvwtLEDIJgo_jNL1di1Lqv45t9CO7o9aKOp_pQOyX4E6_Ltz08YnmDVIL8El2IXMCBXnpdHGCI_4Ef8V1XF65cFDRp-I5rh1Ol_s0K4IhgHLe1OgbZEgT3Jw0fb5w0ORpgob4uUd2EU_K0jfN" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jb250cmlidXRpb24udXNlcmNvbnRlbnQuZ29vZ2xlLmNvbS9kb3dubG9hZD9jPUNneGlZWEprWDNOMGIzSmhaMlVTVUJJTmNtVnpjRzl1YzJWZlpHRjBZUm9fQ2pBeU5XSmxPRGRsTldNMFl6TXdaVGN4TURBd05qWXdOelkwTWpjMlkySTFOREEwTlRFMk1URXlNMkV5WWpVek0yTVNDeElIRU9TZ3RZTElBeGdCJmZpbGVuYW1lPWluZGV4Lmh0bWwmb3BpPTEwMzEzNTA1MA"/><style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=hKjk6hrrh13J9yjJqyujZZ-95fw2aJ5jlebF5uXABQ85VNmTCNvEK0GctPD6TO1BK1z_fTyLBBkNSdzYzsq-CNIql4DR6HLkF0eQFS_5j2nQCtkODCF2pHdQjdbx1Ux6yF3aZuZ0DLVerADpe95WdHP-SBChyc5PMi04szB5TtnAYE8-wbjKEjOFvq-0hNz-SZVTTEhgzOOKll8nUhKota6yTTOPx8eTAuZGLpyuMOuJFAkNKQtexnTLSw8IV3PTcZ0lkMYuwyGW2UslewCBcC_LfEBKmGZWxf_kU36b2Pz8QiWcXk64CF59sr4tUI5r" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jb250cmlidXRpb24udXNlcmNvbnRlbnQuZ29vZ2xlLmNvbS9kb3dubG9hZD9jPUNneGlZWEprWDNOMGIzSmhaMlVTVUJJTmNtVnpjRzl1YzJWZlpHRjBZUm9fQ2pCa01qUTFOMlZtTVdVM016bGxZV0UyTURBd05qWXdPREZoTWpWa01ETXdOakF3TmpJeU5HTmpNRFF5TTJNNU1EWVNDeElIRU9TZ3RZTElBeGdCJmZpbGVuYW1lPWluZGV4Lmh0bWwmb3BpPTEwMzEzNTA1MA"/><style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; width: 100%; overflow: hidden; }
 
@@ -2273,6 +2273,31 @@ function shadeColor(hex, factor) {
   }
 }
 
+function getUnderwaterIrisColor(baseHex, shadeFactor, gx, gy, wavePhase) {
+  const { r, g, b } = hexToRgb(baseHex);
+  const clamp = v => Math.max(0, Math.min(255, Math.round(v)));
+  let ir, ig, ib;
+  if (shadeFactor < 1) {
+    ir = r * shadeFactor;
+    ig = g * shadeFactor;
+    ib = b * shadeFactor;
+  } else {
+    const t = shadeFactor - 1;
+    ir = r + (255 - r) * t;
+    ig = g + (255 - g) * t;
+    ib = b + (255 - b) * t;
+  }
+  // Aquatic light-blue underwater tint + animated caustic wave shimmer across the iris
+  const shimmer = Math.sin(gx * 0.58 + gy * 0.48 - wavePhase * 1.35);
+  const causticsBoost = shimmer > 0.52 ? (shimmer - 0.52) / 0.48 : 0;
+  // Target light aqua/sky blue (#5ce1ff -> #bae6fd on shimmer crests)
+  const tr = 92 + causticsBoost * 105;
+  const tg = 216 + causticsBoost * 34;
+  const tb = 255;
+  const blend = 0.54 + causticsBoost * 0.28;
+  return `rgb(${clamp(ir * (1 - blend) + tr * blend)}, ${clamp(ig * (1 - blend) + tg * blend)}, ${clamp(ib * (1 - blend) + tb * blend)})`;
+}
+
 /* ── Smooth Grid, Expression, Physics Bounce & Pixel Clock State ── */
 let animFrameId   = null;
 let behaviorTimer = null;
@@ -2969,10 +2994,19 @@ function drawEyes() {
           const isBigHighlight = (pdx === -3 || pdx === -2) && (pdy === -4 || pdy === -3);
           const isSmallHighlight = (pdx === 2 && pdy === 2);
 
+          const surfY = hasWater ? getWaterSurfaceY(gx) : 999;
+          const isSubmergedPx = hasWater && (gy > surfY);
+          const isMeniscusPx = hasWater && (Math.abs(gy - surfY) <= 0.65);
+
           if (isBigHighlight || isSmallHighlight) {
-            lightLED(gx, gy, '#ffffff', true, false);
+            lightLED(gx, gy, isSubmergedPx ? '#e0f2fe' : '#ffffff', true, false);
           } else if (inPupil) {
             lightLED(gx, gy, idleConfig.pupilColor, false, false);
+          } else if (isMeniscusPx) {
+            lightLED(gx, gy, '#bae6fd', true, false);
+          } else if (isSubmergedPx) {
+            const aquaIris = getUnderwaterIrisColor(idleConfig.eyeColor, shadeFactor, gx, gy, wavePhase);
+            lightLED(gx, gy, aquaIris, true, true);
           } else {
             lightLED(gx, gy, shadedIris, true, true);
           }
@@ -3593,6 +3627,37 @@ function drawEyes() {
       renderNormalOpenEye(scx, scy);
     }
 
+    // Goldfish layer helper: swims behind eyes on upper pass (facing right), in front on lower pass (facing left)
+    function drawGoldfishSprite() {
+      if (!(hasWater && cryStage === 'submerged')) return;
+      const fishFrame = GOLDFISH_FRAMES[fishTailTick % GOLDFISH_FRAMES.length];
+      const fcx = Math.round(fishX);
+      const fcy = Math.round(fishY);
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 7; c++) {
+          const srcC = fishFacing === 1 ? c : (6 - c);
+          const cell = fishFrame[r][srcC];
+          if (cell === '0') continue;
+          const gx = fcx - 3 + c;
+          const gy = fcy - 2 + r;
+          if (cell === '1') {
+            lightLED(gx, gy, '#fb923c', true, true);   // vibrant goldfish orange
+          } else if (cell === '3') {
+            lightLED(gx, gy, '#fde047', true, false);  // golden tail & dorsal fin
+          } else if (cell === '4') {
+            lightLED(gx, gy, '#ffffff', true, false);  // cute scale shine
+          } else if (cell === '2') {
+            lightLED(gx, gy, '#090d16', false, false); // crisp dark fish eye
+          }
+        }
+      }
+    }
+
+    const fishInFront = (fishFacing === -1);
+    if (!fishInFront) {
+      drawGoldfishSprite();
+    }
+
     renderEye(12, 11, false);
     renderEye(33, 11, true);
 
@@ -3648,27 +3713,75 @@ function drawEyes() {
             }
           }
         } else {
-          // Holding breath underwater: tightly sealed wavy lips + puffed-out cheeks!
-          const hbMask = MOUTH_MASKS.holdbreath;
-          for (let r = 0; r < hbMask.length; r++) {
-            for (let c = 0; c < hbMask[r].length; c++) {
-              if (hbMask[r][c] === '1') {
-                lightLED(20 + c, 16 + r, mouthColor, true);
-              }
-            }
+          // Holding breath underwater: puffed cheek arcs that follow the pupil's gaze direction + tight pursed lips!
+          let cheekDir = 0;
+          if (cryStage === 'submerged') {
+            const avgDx = fishX - 22.5;
+            if (avgDx > 1.5) cheekDir = 1;
+            else if (avgDx < -1.5) cheekDir = -1;
           }
-          // Cute puffed cheeks on both sides of mouth
-          const cheekCol = '#f4729b';
-          const cheekHighlight = '#fda4af';
-          lightLED(17, 16, cheekHighlight, true, false);
-          lightLED(18, 16, cheekCol, true, false);
-          lightLED(17, 17, cheekCol, true, false);
-          lightLED(18, 17, cheekCol, true, false);
 
-          lightLED(26, 16, cheekCol, true, false);
-          lightLED(27, 16, cheekHighlight, true, false);
-          lightLED(26, 17, cheekCol, true, false);
-          lightLED(27, 17, cheekCol, true, false);
+          if (cheekDir === -1) {
+            // Pupils looking LEFT: both puffed cheek arcs bulge/point to the LEFT '('
+            // Left cheek '('
+            lightLED(16, 17, mouthColor, true);
+            lightLED(17, 17, mouthColor, true);
+            lightLED(15, 18, mouthColor, true);
+            lightLED(15, 19, mouthColor, true);
+            lightLED(16, 20, mouthColor, true);
+            lightLED(17, 20, mouthColor, true);
+
+            // Tight sealed lips
+            lightLED(21, 19, mouthColor, true);
+            lightLED(22, 19, mouthColor, true);
+
+            // Right cheek '('
+            lightLED(27, 17, mouthColor, true);
+            lightLED(28, 17, mouthColor, true);
+            lightLED(26, 18, mouthColor, true);
+            lightLED(26, 19, mouthColor, true);
+            lightLED(27, 20, mouthColor, true);
+            lightLED(28, 20, mouthColor, true);
+          } else if (cheekDir === 1) {
+            // Pupils looking RIGHT: both puffed cheek arcs bulge/point to the RIGHT ')'
+            // Left cheek ')'
+            lightLED(17, 17, mouthColor, true);
+            lightLED(18, 17, mouthColor, true);
+            lightLED(19, 18, mouthColor, true);
+            lightLED(19, 19, mouthColor, true);
+            lightLED(17, 20, mouthColor, true);
+            lightLED(18, 20, mouthColor, true);
+
+            // Tight sealed lips
+            lightLED(23, 19, mouthColor, true);
+            lightLED(24, 19, mouthColor, true);
+
+            // Right cheek ')'
+            lightLED(28, 17, mouthColor, true);
+            lightLED(29, 17, mouthColor, true);
+            lightLED(30, 18, mouthColor, true);
+            lightLED(30, 19, mouthColor, true);
+            lightLED(28, 20, mouthColor, true);
+            lightLED(29, 20, mouthColor, true);
+          } else {
+            // Pupils centered: symmetrical outward puffed cheeks '(' and ')'
+            lightLED(17, 17, mouthColor, true);
+            lightLED(18, 17, mouthColor, true);
+            lightLED(16, 18, mouthColor, true);
+            lightLED(16, 19, mouthColor, true);
+            lightLED(17, 20, mouthColor, true);
+            lightLED(18, 20, mouthColor, true);
+
+            lightLED(22, 19, mouthColor, true);
+            lightLED(23, 19, mouthColor, true);
+
+            lightLED(27, 17, mouthColor, true);
+            lightLED(28, 17, mouthColor, true);
+            lightLED(29, 18, mouthColor, true);
+            lightLED(29, 19, mouthColor, true);
+            lightLED(27, 20, mouthColor, true);
+            lightLED(28, 20, mouthColor, true);
+          }
         }
       } else if (currentMood === 'bubblegum') {
         if (gumStage === 'chew') {
@@ -3806,29 +3919,9 @@ function drawEyes() {
         }
       });
 
-      // 2. Cute Pixel Goldfish swimming one full round around the eyes
-      if (cryStage === 'submerged') {
-        const fishFrame = GOLDFISH_FRAMES[fishTailTick % GOLDFISH_FRAMES.length];
-        const fcx = Math.round(fishX);
-        const fcy = Math.round(fishY);
-        for (let r = 0; r < 5; r++) {
-          for (let c = 0; c < 7; c++) {
-            const srcC = fishFacing === 1 ? c : (6 - c);
-            const cell = fishFrame[r][srcC];
-            if (cell === '0') continue;
-            const gx = fcx - 3 + c;
-            const gy = fcy - 2 + r;
-            if (cell === '1') {
-              lightLED(gx, gy, '#fb923c', true, true);   // vibrant goldfish orange
-            } else if (cell === '3') {
-              lightLED(gx, gy, '#fde047', true, false);  // golden tail & dorsal fin
-            } else if (cell === '4') {
-              lightLED(gx, gy, '#ffffff', true, false);  // cute scale shine
-            } else if (cell === '2') {
-              lightLED(gx, gy, '#090d16', false, false); // crisp dark fish eye
-            }
-          }
-        }
+      // 2. Cute Pixel Goldfish (drawn in front of eyes on lower return pass)
+      if (fishInFront) {
+        drawGoldfishSprite();
       }
 
       // 3. Translucent Water Surface Wave Crest (ripples across screen while filling & draining)
@@ -4305,9 +4398,10 @@ function animationLoop(timestamp) {
       // Spawn rising air bubbles while holding breath
       if (timestamp - lastBubbleSpawnTime >= 620) {
         lastBubbleSpawnTime = timestamp;
+        const bubbleGazeShift = (fishX - 22.5) > 1.5 ? 1 : ((fishX - 22.5) < -1.5 ? -1 : 0);
         cryBubbles.push({
-          x: 20.5 + Math.random() * 4,
-          y: 14.5,
+          x: 21.5 + bubbleGazeShift + Math.random() * 1.5,
+          y: 17.5,
           speed: 4.5 + Math.random() * 2.5,
           phase: Math.random() * Math.PI * 2,
           size: Math.random() < 0.35 ? 2 : 1
@@ -4319,34 +4413,37 @@ function animationLoop(timestamp) {
       });
       cryBubbles = cryBubbles.filter(b => b.y > -2);
 
-      // Goldfish swims in -> makes 1 full lap around both eyes -> swims offscreen right
+      // Goldfish swims in behind eyes -> loops in front of eyes -> swims offscreen behind eyes
       fishProgress = Math.min(1, fishProgress + dt / 4.8);
       const prevX = fishX;
+      const orbitRx = 18.2;
+      const orbitRy = 4.6;
+      const orbitCy = 10.8;
 
       if (fishProgress < 0.16) {
-        // Smooth entry from offscreen left to top-left above eyes
+        // Smooth entry from offscreen left (behind eyes)
         const u = fishProgress / 0.16;
         const ease = 1 - Math.pow(1 - u, 2);
         const startAngle = -Math.PI * 0.72;
-        const targetX = 22.5 + Math.cos(startAngle) * 18.2;
-        const targetY = 10.8 + Math.sin(startAngle) * 7.4;
+        const targetX = 22.5 + Math.cos(startAngle) * orbitRx;
+        const targetY = orbitCy + Math.sin(startAngle) * orbitRy;
         fishX = -6 + (targetX - (-6)) * ease;
-        fishY = 4.2 + (targetY - 4.2) * ease;
+        fishY = 6.2 + (targetY - 6.2) * ease;
       } else if (fishProgress < 0.84) {
-        // Complete 1 full 360° elliptical lap around the eyes
+        // Complete 1 full 360° elliptical lap (top pass behind eyes, bottom pass in front of eyes)
         const u = (fishProgress - 0.16) / 0.68;
         const theta = -Math.PI * 0.72 + u * Math.PI * 2;
-        fishX = 22.5 + Math.cos(theta) * 18.2;
-        fishY = 10.8 + Math.sin(theta) * 7.4;
+        fishX = 22.5 + Math.cos(theta) * orbitRx;
+        fishY = orbitCy + Math.sin(theta) * orbitRy;
       } else {
-        // Swim smoothly offscreen to the right
+        // Swim smoothly offscreen to the right (behind eyes)
         const u = (fishProgress - 0.84) / 0.16;
         const ease = u * u;
         const endAngle = -Math.PI * 0.72 + Math.PI * 2;
-        const startX = 22.5 + Math.cos(endAngle) * 18.2;
-        const startY = 10.8 + Math.sin(endAngle) * 7.4;
+        const startX = 22.5 + Math.cos(endAngle) * orbitRx;
+        const startY = orbitCy + Math.sin(endAngle) * orbitRy;
         fishX = startX + (52 - startX) * ease;
-        fishY = startY + (2.5 - startY) * ease;
+        fishY = startY + (5.5 - startY) * ease;
       }
 
       const dx = fishX - prevX;
