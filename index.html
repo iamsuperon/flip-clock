@@ -6,7 +6,7 @@
 <title>Flip Clock</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
-<style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=c8JJq0DdxtaVVxMLjIe03rnS7oyz097W951-6z_WPO8vR4I1IANDY109wv9l2Ug3GRbbn7fBlkQ2sABdhRcavZxJMD-zjbBXWtuaouJmvLAVh3rnHK9rL83GAOO15FTlirE0xpEZmQlGbkrlzEDHuI5ecujJprcLgNhEBB0bYclt4iD7zB5eOuDDOObpPygE8BMwzqN7aWabsxx0hNMFCi_MMakQ301MGRTahKiHnKoHNKVQNVqo-3-m8H0h7R-7Z42auAS-yYVA9aI_4X18HsjrrciIHef244wUTenRbacszOmZLQh0ngSfrnFz6Vv3" charset="UTF-8"></script><style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; width: 100%; overflow: hidden; }
 
@@ -1351,6 +1351,8 @@ let lastGumTickTime = 0;
 
 let giggleTick = 0;
 let lastGiggleTime = 0;
+let angryMumbleTick = 0;
+let lastAngryMumbleTime = 0;
 
 let curLookX = 0, curLookY = 0;
 let tgtLookX = 0, tgtLookY = 0;
@@ -1588,6 +1590,34 @@ const GUM_CHEW_FRAMES = [
     "00000",
     "12211",
     "01100",
+    "00000"
+  ]
+];
+
+// Angry mumbling/muttering mouth frames
+const ANGRY_MUMBLE_FRAMES = [
+  [
+    "00100",
+    "01010",
+    "10001",
+    "00000"
+  ],
+  [
+    "00000",
+    "01110",
+    "10001",
+    "00000"
+  ],
+  [
+    "00000",
+    "01010",
+    "01110",
+    "00000"
+  ],
+  [
+    "00000",
+    "11111",
+    "00000",
     "00000"
   ]
 ];
@@ -1857,7 +1887,7 @@ function drawEyes() {
   if (curEyeOffsetY > -21) {
     const isDeformed = bouncePhase !== 'none' || Math.abs(eyeScaleX - 1) > 0.015 || Math.abs(eyeScaleY - 1) > 0.015;
 
-    function renderNormalOpenEye(rawScx, rawScy) {
+    function renderNormalOpenEye(rawScx, rawScy, overrideFocus = null) {
       const scx = Math.round(rawScx);
       const scy = Math.round(rawScy);
 
@@ -1877,8 +1907,8 @@ function drawEyes() {
         return;
       }
 
-      const pcx = Math.round(scx + curLookX);
-      const pcy = Math.round(scy + curLookY);
+      const pcx = overrideFocus ? Math.round(overrideFocus.x) : Math.round(scx + curLookX);
+      const pcy = overrideFocus ? Math.round(overrideFocus.y) : Math.round(scy + curLookY);
 
       for (let r = 0; r < 14; r++) {
         const dy = r - 7;
@@ -2001,8 +2031,7 @@ function drawEyes() {
         return;
       }
 
-      /* ── 1. HAPPY (^ ^ + pink blush, NO pupils) ── */
-      if (currentMood === 'happy') {
+      function renderHappyArcEye() {
         const archColor = shadeColor(idleConfig.eyeColor, 1.35);
         for (let r = 0; r < HAPPY_ARCH.length; r++) {
           for (let c = 0; c < HAPPY_ARCH[r].length; c++) {
@@ -2018,6 +2047,11 @@ function drawEyes() {
             lightLED(blushX + bx, blushY + by, '#f4729b', true);
           }
         }
+      }
+
+      /* ── 1. HAPPY (^ ^ + pink blush, NO pupils) ── */
+      if (currentMood === 'happy') {
+        renderHappyArcEye();
         return;
       }
 
@@ -2192,23 +2226,28 @@ function drawEyes() {
 
       /* ── 8. BUBBLEGUM REACTIONS ── */
       if (currentMood === 'bubblegum') {
-        if (gumStage === 'blow' && gumRadius >= 7) {
-          renderShockedEye(baseCx, baseCy, isRightEye, false);
+        if (gumStage === 'blow') {
+          const focusProgress = Math.min(1, gumRadius / 8.5);
+          const targetPx = isRightEye ? (scx - 3) : (scx + 3);
+          const targetPy = scy + 2;
+          const focusX = scx + (targetPx - scx) * focusProgress;
+          const focusY = (scy + 1) + (targetPy - (scy + 1)) * focusProgress;
+          renderNormalOpenEye(scx, scy, { x: focusX, y: focusY });
           return;
         }
         if (gumStage === 'pop') {
-          if (gumPopProgress < 0.16) {
+          if (gumPopProgress < 0.14) {
             const lidColor = shadeColor(idleConfig.eyeColor, 1.2);
             for (let dx = -5; dx <= 5; dx++) {
               lightLED(baseCx + dx, baseCy + 2, lidColor, true);
             }
           } else {
-            renderShockedEye(baseCx, baseCy, isRightEye, false);
+            renderHappyArcEye();
           }
           return;
         }
         if (gumStage === 'recover') {
-          renderShockedEye(baseCx, baseCy, isRightEye, false);
+          renderHappyArcEye();
           return;
         }
       }
@@ -2257,10 +2296,10 @@ function drawEyes() {
             }
           }
         } else if (gumStage === 'pop' || gumStage === 'recover') {
-          const shockMask = MOUTH_MASKS.shocked;
-          for (let r = 0; r < shockMask.length; r++) {
-            for (let c = 0; c < shockMask[r].length; c++) {
-              if (shockMask[r][c] === '1') {
+          const happyMask = MOUTH_MASKS.happy;
+          for (let r = 0; r < happyMask.length; r++) {
+            for (let c = 0; c < happyMask[r].length; c++) {
+              if (happyMask[r][c] === '1') {
                 lightLED(20 + c, 16 + r, mouthColor, true);
               }
             }
@@ -2277,6 +2316,15 @@ function drawEyes() {
               lightLED(jmx + c, jmy + r, mouthColor, true);
             } else if (cell === '2') {
               lightLED(jmx + c, jmy + r, '#f4729b', true);
+            }
+          }
+        }
+      } else if (!isDeformed && currentMood === 'angry') {
+        const frame = ANGRY_MUMBLE_FRAMES[angryMumbleTick % ANGRY_MUMBLE_FRAMES.length];
+        for (let r = 0; r < frame.length; r++) {
+          for (let c = 0; c < frame[r].length; c++) {
+            if (frame[r][c] === '1') {
+              lightLED(mx + c, my + r, mouthColor, true);
             }
           }
         }
@@ -2679,6 +2727,12 @@ function animationLoop(timestamp) {
   if (currentMood === 'joy' && bouncePhase === 'none' && curEyeOffsetY > -21 && timestamp - lastGiggleTime >= 165) {
     lastGiggleTime = timestamp;
     giggleTick++;
+    needsDraw = true;
+  }
+
+  if (currentMood === 'angry' && bouncePhase === 'none' && curEyeOffsetY > -21 && timestamp - lastAngryMumbleTime >= 140) {
+    lastAngryMumbleTime = timestamp;
+    angryMumbleTick++;
     needsDraw = true;
   }
 
