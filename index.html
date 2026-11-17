@@ -3,69 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flip Clock</title>
+<title>Flip Clock · Pixel Companion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=Kp3Peh11-gWJ88tS0cqr-n_NVTmRYOJ8QynwBBcMGmTpiol0wsQKDsgMEj7qzMshhisyBWcLDGZS4xMC3gjw8upda7wy28MUPcB4xNlNxMSFSeXjiQfjDN8ws_pgUUtRv8stqD57m__btDFBGpDkRkhOb0dhMPKxAg76teaIn29BNOJu-DY7rJHiFwrg5ZDinIKjyoeWmFAKOk-R-EcgpEoQZWsgzkIjV9q40_rs4er-RlrFZxYTplVjBBdijiNr8JqWc1BxUwkzEP0GqB6bmtU6X3ziZtHcKV64ak-rWV3IWLA9LHNcM_E1pVnFJfDf" charset="UTF-8"></script><style>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=KdluB3cFRdepAlBAKaehV9gt6BLB-9_TtAfmBsUF801WG-Iw_cDCStG9ZzjrlRwQ4PuUeiojhkiNdek3fj3K0K1HCQySBUDCUE499peAcIeG6zDyTIdruVDCGuOqrQu8lArgBWRBJ_02ltCP5M6LZrbNaNj3EwTe7S9Hx_XlQhy0S7uWFjLskGhbD4O_fv05_0ydeb1_siBOmDA0kQwCqQRfIbU1X8d0NCdW6W_FTSe47T7U9qx5b_joAJjS7fwJ41tsumSIYMx2xBSUCnhx6e8ZKd0KpfKJoGHknLB04MWO1MIgc5ACRgM3GsTS4pmB" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jb250cmlidXRpb24udXNlcmNvbnRlbnQuZ29vZ2xlLmNvbS9kb3dubG9hZD9jPUNneGlZWEprWDNOMGIzSmhaMlVTVUJJTmNtVnpjRzl1YzJWZlpHRjBZUm9fQ2pBd00yUTNOemN3TlRNd1pEQXdOVFpoTURBd05qWXdOelZrTm1JeVpUUTJPREF3TmpJeE5qZGlZekF6WVdNM1ptVVNDeElIRU9TZ3RZTElBeGdCJmZpbGVuYW1lPWluZGV4Lmh0bWwmb3BpPTEwMzEzNTA1MA"/><style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; width: 100%; overflow: hidden; }
 
 :root {
-  --cw:  12vw;
-  --ch:  19.3vw;
-  --hh:  9.65vw;
-  --fs:  15.4vw;
-  --gap: 0.7vw;
-  --sep: 2.2vw;
-  --br:  0.6vw;
-  --div: 0.22vw;
+  --cw:  min(12vw, 21.5vh);
+  --ch:  calc(var(--cw) * 1.608);
+  --hh:  calc(var(--ch) * 0.5);
+  --fs:  calc(var(--cw) * 1.28);
+  --gap: calc(var(--cw) * 0.058);
+  --sep: calc(var(--cw) * 0.185);
+  --br:  calc(var(--cw) * 0.055);
+  --div: max(2px, calc(var(--cw) * 0.018));
+
+  --ui-bg: rgba(15, 17, 21, 0.88);
+  --ui-surface: rgba(255, 255, 255, 0.04);
+  --ui-surface-hover: rgba(255, 255, 255, 0.08);
+  --ui-border: rgba(255, 255, 255, 0.09);
+  --ui-border-strong: rgba(255, 255, 255, 0.18);
+  --ui-text: #f1f5f9;
+  --ui-muted: #8b95a5;
+  --ui-dim: #525b69;
+  --accent: #4cc3ff;
+}
+
+body.no-seconds {
+  --cw: min(16vw, 24vh);
 }
 
 body {
-  background: #000;
+  background: #050506;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   font-family: 'Bebas Neue', 'Impact', sans-serif;
+  color: var(--ui-text);
+  -webkit-font-smoothing: antialiased;
 }
 
 body::before {
   content: '';
   position: fixed; inset: 0;
-  background: radial-gradient(ellipse 80% 70% at 50% 50%, #1a1a1a 0%, #000 100%);
+  background:
+    radial-gradient(ellipse 75% 65% at 50% 48%, #181a1f 0%, #090a0c 60%, #030304 100%);
   pointer-events: none;
   z-index: 0;
 }
 
-/* ── Top-right Settings Gear ── */
+/* Subtle ambient vignette grain */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 55%, rgba(0,0,0,0.65) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Top-right Pro Control Dock ── */
 .top-right {
   position: fixed;
-  top: 2.5vh; right: 2.5vw;
+  top: 2.2vh; right: 2.2vw;
   z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px;
+  background: rgba(18, 20, 25, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0.55;
+  transition: opacity 0.25s ease, border-color 0.25s ease, background 0.25s ease;
 }
-.gear-btn {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: #3e3e3e;
-  padding: 0.8vh 0.8vw;
-  border-radius: 0.4vw;
+.top-right:hover,
+.top-right:focus-within {
+  opacity: 1;
+  background: rgba(22, 25, 32, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dock-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #7b8494;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.3s;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.25s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.gear-btn:hover {
-  background: rgba(255,255,255,0.09);
-  color: #aaa;
-  border-color: rgba(255,255,255,0.2);
-  transform: rotate(30deg);
+.dock-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.12);
 }
-.gear-btn svg {
-  width: 1.4vw; height: 1.4vw;
-  min-width: 18px; min-height: 18px;
+.dock-btn.gear-btn:hover svg {
+  transform: rotate(35deg);
+}
+.dock-btn svg {
+  width: 17px;
+  height: 17px;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dock-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* ── Main wrapper ── */
@@ -75,7 +129,7 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3vh;
+  gap: clamp(18px, 3.2vh, 36px);
   user-select: none;
 }
 
@@ -85,23 +139,25 @@ body::before {
   gap: var(--sep);
 }
 .segment { display: flex; gap: var(--gap); }
+.segment.hidden,
+.separator.hidden { display: none; }
 
 /* ── Flip card ── */
 .card {
   position: relative;
   width: var(--cw); height: var(--ch);
   border-radius: var(--br);
-  perspective: calc(var(--cw) * 4);
+  perspective: calc(var(--cw) * 4.2);
   flex-shrink: 0;
 }
 .card::before {
   content: '';
   position: absolute;
-  bottom: calc(var(--cw) * -0.12);
-  left: 10%; right: 10%;
+  bottom: calc(var(--cw) * -0.11);
+  left: 8%; right: 8%;
   height: calc(var(--cw) * 0.12);
-  background: rgba(0,0,0,0.8);
-  filter: blur(calc(var(--cw) * 0.08));
+  background: rgba(0,0,0,0.88);
+  filter: blur(calc(var(--cw) * 0.075));
   border-radius: 50%;
   z-index: 0;
 }
@@ -109,11 +165,28 @@ body::before {
   position: absolute;
   top: 50%; left: 0; right: 0;
   height: var(--div);
-  background: #000;
+  background: #050505;
   transform: translateY(-50%);
   z-index: 30;
   pointer-events: none;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06);
 }
+/* Subtle mechanical flip hinges */
+.divider::before,
+.divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: max(4px, calc(var(--cw) * 0.032));
+  height: max(10px, calc(var(--cw) * 0.085));
+  background: linear-gradient(180deg, #2d3036 0%, #141518 100%);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+.divider::before { left: -1px; }
+.divider::after  { right: -1px; }
+
 .panel {
   position: absolute;
   left: 0; right: 0;
@@ -125,21 +198,21 @@ body::before {
 .static-top {
   top: 0;
   border-radius: var(--br) var(--br) 0 0;
-  background: linear-gradient(180deg, #272727 0%, #1d1d1d 100%);
+  background: linear-gradient(180deg, #292b30 0%, #1d1e22 100%);
   z-index: 2;
   border-bottom: calc(var(--div) * 0.5) solid #000;
 }
 .static-bot {
   bottom: 0;
   border-radius: 0 0 var(--br) var(--br);
-  background: linear-gradient(180deg, #1a1a1a 0%, #131313 100%);
+  background: linear-gradient(180deg, #1b1c20 0%, #131417 100%);
   z-index: 2;
   border-top: calc(var(--div) * 0.5) solid #000;
 }
 .flip-top {
   top: 0;
   border-radius: var(--br) var(--br) 0 0;
-  background: linear-gradient(180deg, #272727 0%, #1d1d1d 100%);
+  background: linear-gradient(180deg, #292b30 0%, #1d1e22 100%);
   transform-origin: center bottom;
   z-index: 10;
   border-bottom: calc(var(--div) * 0.5) solid #000;
@@ -147,7 +220,7 @@ body::before {
 .flip-bot {
   bottom: 0;
   border-radius: 0 0 var(--br) var(--br);
-  background: linear-gradient(180deg, #1a1a1a 0%, #131313 100%);
+  background: linear-gradient(180deg, #1b1c20 0%, #131417 100%);
   transform-origin: center top;
   transform: rotateX(90deg);
   z-index: 8;
@@ -160,33 +233,48 @@ body::before {
   text-align: center;
   line-height: var(--ch);
   font-size: var(--fs);
-  color: #fff;
+  color: #f8fafc;
   letter-spacing: -0.02em;
   pointer-events: none;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.45);
 }
 .static-top .digit, .flip-top .digit { top: 0; }
 .static-bot .digit, .flip-bot .digit { top: calc(-1 * var(--hh)); }
 .static-top::after, .flip-top::after {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.055) 0%, transparent 60%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.065) 0%, transparent 65%);
   pointer-events: none;
 }
 .static-bot::after, .flip-bot::after {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(0deg, rgba(0,0,0,0.25) 0%, transparent 60%);
+  background: linear-gradient(0deg, rgba(0,0,0,0.28) 0%, transparent 65%);
   pointer-events: none;
 }
 .card-border {
   position: absolute; inset: 0;
   border-radius: var(--br);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.09);
   box-shadow:
-    0 1.5vw 4vw rgba(0,0,0,0.95),
-    0 0.4vw 1vw rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(255,255,255,0.09);
+    0 1.4vw 3.8vw rgba(0,0,0,0.92),
+    0 0.35vw 0.9vw rgba(0,0,0,0.75),
+    inset 0 1px 0 rgba(255,255,255,0.11);
   z-index: 40;
   pointer-events: none;
 }
+
+.ampm-badge {
+  position: absolute;
+  bottom: calc(var(--cw) * 0.065);
+  left: calc(var(--cw) * 0.085);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: max(10px, calc(var(--cw) * 0.095));
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.42);
+  z-index: 35;
+  pointer-events: none;
+}
+.ampm-badge.hidden { display: none; }
 
 @keyframes flipTopOut {
   0%   { transform: rotateX(0deg); }
@@ -207,17 +295,17 @@ body::before {
   align-items: center;
 }
 .dot {
-  width: calc(var(--cw) * 0.11);
-  height: calc(var(--cw) * 0.11);
+  width: calc(var(--cw) * 0.105);
+  height: calc(var(--cw) * 0.105);
   border-radius: 50%;
-  background: #444;
-  box-shadow: 0 0 0.5vw rgba(200,200,200,0.08);
+  background: #474c56;
+  box-shadow: 0 0 0.6vw rgba(255,255,255,0.08);
   animation: blink 1s ease-in-out infinite alternate;
 }
 .dot:nth-child(2) { animation-delay: 0.15s; }
 @keyframes blink {
-  0%   { opacity: 0.35; }
-  100% { opacity: 0.8; }
+  0%   { opacity: 0.32; }
+  100% { opacity: 0.85; }
 }
 
 /* ── Info block (date + weather) ── */
@@ -225,67 +313,75 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.2vh;
+  gap: clamp(8px, 1.3vh, 14px);
 }
 .date-row {
   display: flex;
   align-items: center;
-  gap: 1.6vw;
-  color: #fff;
+  gap: clamp(12px, 1.5vw, 24px);
+  color: #f8fafc;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 3.2vw;
-  letter-spacing: 0.5vw;
-  -webkit-text-stroke: 0.04vw #fff;
+  font-size: clamp(22px, 2.9vw, 46px);
+  letter-spacing: 0.18em;
 }
 .date-sep {
   display: inline-block;
-  width: 0.5vw; height: 0.5vw;
+  width: 6px; height: 6px;
   border-radius: 50%;
-  background: #505050;
+  background: #4b5260;
   flex-shrink: 0;
 }
 .weather-row {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 1.4vw;
-  color: #d8d8d8;
+  gap: clamp(10px, 1.2vw, 18px);
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 2.1vw;
-  letter-spacing: 0.35vw;
-  min-height: 2.5vw;
+  font-size: clamp(16px, 1.85vw, 28px);
+  letter-spacing: 0.16em;
   cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
-.weather-row:hover { color: #fff; }
-.weather-temp { color: #888; }
-.weather-icon { font-style: normal; font-size: 2vw; line-height: 1; }
+.weather-row.hidden { display: none; }
+.weather-row:hover {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.weather-temp { color: #94a3b8; }
+.weather-icon { font-style: normal; font-size: 0.95em; line-height: 1; }
 .weather-dot {
   display: inline-block;
-  width: 0.35vw; height: 0.35vw;
+  width: 4px; height: 4px;
   border-radius: 50%;
-  background: #363636;
+  background: #475569;
 }
 .weather-loc {
-  color: #555;
-  font-size: 1.5vw;
-  letter-spacing: 0.25vw;
+  color: #64748b;
+  font-size: 0.8em;
+  letter-spacing: 0.14em;
 }
 
 /* ── Bottom-right: secondary clock ── */
 .bottom-right {
   position: fixed;
-  bottom: 2.5vh; right: 2.5vw;
+  bottom: 2.2vh; right: 2.2vw;
   z-index: 100;
   display: flex;
   align-items: flex-end;
-  gap: 1.4vw;
+  gap: 14px;
 }
 .sec-widget {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.4vh;
+  gap: 2px;
   overflow: hidden;
-  max-width: 24vw;
+  max-width: 320px;
   transition: max-width 0.35s cubic-bezier(0.4,0,0.2,1),
               opacity   0.3s ease;
   opacity: 1;
@@ -297,304 +393,615 @@ body::before {
 }
 .sec-label {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1vw;
-  letter-spacing: 0.35vw;
-  color: #757575;
+  font-size: clamp(13px, 1.05vw, 17px);
+  letter-spacing: 0.22em;
+  color: #7c8696;
   white-space: nowrap;
   cursor: pointer;
   transition: color 0.2s;
   display: flex;
   align-items: center;
-  gap: 0.4vw;
+  gap: 5px;
 }
-.sec-label:hover { color: #bbb; }
+.sec-label:hover { color: #e2e8f0; }
 .sec-label svg {
-  width: 0.9vw; height: 0.9vw;
+  width: 12px; height: 12px;
   flex-shrink: 0;
-  opacity: 0.5;
+  opacity: 0.6;
 }
 .sec-time {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 3.4vw;
-  color: #d8d8d8;
-  letter-spacing: 0.1vw;
-  line-height: 1;
+  font-size: clamp(28px, 3.1vw, 48px);
+  color: #e2e8f0;
+  letter-spacing: 0.06em;
+  line-height: 0.95;
   white-space: nowrap;
 }
 .sec-ampm {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1vw;
-  letter-spacing: 0.3vw;
-  color: #484848;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #5b6474;
   text-align: right;
   white-space: nowrap;
 }
 
-/* Eye toggle button */
 .eye-btn {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: #3e3e3e;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1vw;
-  letter-spacing: 0.25vw;
-  padding: 0.7vh 1.1vw;
-  border-radius: 0.4vw;
+  background: rgba(18, 20, 25, 0.55);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  color: #6b7484;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 8px 11px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
   white-space: nowrap;
   line-height: 1;
   display: flex;
   align-items: center;
-  gap: 0.5vw;
+  gap: 6px;
 }
 .eye-btn:hover {
   background: rgba(255,255,255,0.09);
-  color: #aaa;
-  border-color: rgba(255,255,255,0.2);
+  color: #f1f5f9;
+  border-color: rgba(255,255,255,0.18);
 }
 .eye-btn svg {
-  width: 1.2vw; height: 1.2vw;
+  width: 14px; height: 14px;
   flex-shrink: 0;
 }
 
-/* ── Modals (City search & Settings) ── */
+/* ══════════════════════════════════════════════════════
+   PRO STUDIO MODALS (City Search & Settings)
+══════════════════════════════════════════════════════ */
 .modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(6px);
+  background: rgba(4, 5, 8, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s;
+  transition: opacity 0.22s ease;
 }
 .modal-overlay.open {
   opacity: 1;
   pointer-events: all;
 }
 .modal {
-  background: #111;
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 1vw;
-  padding: 2.2vh 2.5vw;
-  width: 36vw;
-  min-width: 330px;
-  max-height: 92vh;
-  overflow-y: auto;
-  box-shadow: 0 4vw 8vw rgba(0,0,0,0.9);
+  background: linear-gradient(180deg, #14171d 0%, #0e1014 100%);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  gap: 1.1vh;
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.modal-overlay.open .modal {
+  transform: translateY(0) scale(1);
+}
+.modal.settings-modal {
+  max-width: 540px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.modal-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .modal-title {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.5vw;
-  letter-spacing: 0.4vw;
-  color: #888;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  color: #f8fafc;
+  line-height: 1.1;
+}
+.modal-subtitle {
+  font-size: 12px;
+  color: var(--ui-muted);
+}
+.modal-close-x {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.16s;
+}
+.modal-close-x:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+/* City search modal body */
+.city-modal-body {
+  padding: 18px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 .modal-input-wrap {
   display: flex;
-  gap: 0.8vw;
+  gap: 8px;
 }
 .modal-input {
   flex: 1;
-  background: #1c1c1c;
+  background: #0a0c0f;
   border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 0.5vw;
+  border-radius: 10px;
   color: #fff;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.4vw;
-  letter-spacing: 0.2vw;
-  padding: 1vh 1vw;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  padding: 10px 14px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.modal-input:focus { border-color: rgba(255,255,255,0.35); }
+.modal-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(76, 195, 255, 0.15);
+}
 .modal-search-btn {
-  background: rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.09);
   border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 0.5vw;
-  color: #999;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.2vw;
-  letter-spacing: 0.2vw;
-  padding: 0 1.2vw;
+  border-radius: 10px;
+  color: #f8fafc;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 16px;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-  white-space: nowrap;
+  transition: background 0.18s;
 }
-.modal-search-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
+.modal-search-btn:hover { background: rgba(255,255,255,0.16); }
 .modal-results {
   display: flex;
   flex-direction: column;
-  gap: 0.5vh;
-  max-height: 28vh;
+  gap: 6px;
+  max-height: 240px;
   overflow-y: auto;
 }
 .modal-result-item {
-  background: #181818;
+  background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 0.4vw;
-  padding: 1vh 1vw;
+  border-radius: 10px;
+  padding: 10px 14px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
   display: flex;
   flex-direction: column;
-  gap: 0.2vh;
+  gap: 2px;
 }
-.modal-result-item:hover { background: #222; border-color: rgba(255,255,255,0.18); }
+.modal-result-item:hover {
+  background: rgba(76, 195, 255, 0.08);
+  border-color: rgba(76, 195, 255, 0.35);
+}
 .result-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.3vw;
-  letter-spacing: 0.2vw;
-  color: #e0e0e0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
 }
 .result-sub {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.9vw;
-  letter-spacing: 0.15vw;
-  color: #555;
+  font-size: 12px;
+  color: #64748b;
 }
 .modal-status {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1vw;
-  letter-spacing: 0.2vw;
-  color: #444;
+  font-size: 12px;
+  color: #64748b;
   text-align: center;
-  padding: 1vh 0;
+  padding: 6px 0;
 }
-.modal-cancel {
-  background: none;
-  border: none;
-  color: #555;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1vw;
-  letter-spacing: 0.25vw;
-  cursor: pointer;
-  text-align: center;
-  transition: color 0.2s;
-  padding: 0.5vh 0;
-}
-.modal-cancel:hover { color: #bbb; }
 
-/* ── Settings Controls ── */
+/* ── Settings Navigation Tabs ── */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 22px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ui-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.tab-btn:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.04);
+}
+.tab-btn.active {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.settings-body {
+  padding: 16px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 62vh;
+}
+.settings-body::-webkit-scrollbar,
+.modal-results::-webkit-scrollbar {
+  width: 6px;
+}
+.settings-body::-webkit-scrollbar-thumb,
+.modal-results::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.14);
+  border-radius: 999px;
+}
+
+.tab-panel {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+.tab-panel.active {
+  display: flex;
+}
+
+/* Live Pixel Preview Card inside Settings */
+.preview-banner {
+  background: #08090c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+#mini-preview-canvas {
+  border-radius: 8px;
+  background: #0a0a0a;
+  border: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.preview-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.preview-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+.swatches-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.swatch-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  position: relative;
+}
+.swatch-btn:hover { transform: scale(1.12); }
+.swatch-btn.active {
+  border-color: #fff;
+  transform: scale(1.1);
+}
+
+/* Setting Cards & Rows */
+.setting-group-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-top: 4px;
+}
 .setting-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #181818;
+  gap: 14px;
+  background: var(--ui-surface);
   border: 1px solid rgba(255,255,255,0.06);
-  padding: 0.9vh 1.2vw;
-  border-radius: 0.5vw;
+  padding: 11px 14px;
+  border-radius: 11px;
+  transition: border-color 0.18s;
+}
+.setting-row:hover {
+  border-color: rgba(255,255,255,0.11);
+}
+.setting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .setting-label {
-  font-size: 1.1vw;
-  letter-spacing: 0.2vw;
-  color: #ccc;
+  font-size: 13px;
+  font-weight: 500;
+  color: #f1f5f9;
 }
 .setting-sub {
-  font-size: 0.75vw;
-  letter-spacing: 0.15vw;
-  color: #555;
+  font-size: 11.5px;
+  color: var(--ui-muted);
+  line-height: 1.35;
 }
+
+/* Modern Toggle Switch */
 .switch {
   position: relative;
   display: inline-block;
-  width: 3.2vw;
-  min-width: 44px;
-  height: 1.7vw;
-  min-height: 24px;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
 }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider {
   position: absolute;
   cursor: pointer;
   inset: 0;
-  background-color: #2a2a2a;
-  transition: .25s;
-  border-radius: 34px;
+  background-color: #232730;
+  transition: 0.22s ease;
+  border-radius: 999px;
   border: 1px solid rgba(255,255,255,0.1);
 }
 .slider:before {
   position: absolute;
   content: "";
-  height: 70%;
-  aspect-ratio: 1;
-  left: 10%;
-  bottom: 15%;
-  background-color: #777;
-  transition: .25s;
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  top: 2px;
+  background-color: #94a3b8;
+  transition: 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   border-radius: 50%;
 }
-input:checked + .slider { background-color: #3a3a3a; border-color: rgba(255,255,255,0.3); }
-input:checked + .slider:before { transform: translateX(115%); background-color: #fff; }
+input:checked + .slider {
+  background-color: #2563eb;
+  border-color: #3b82f6;
+}
+input:checked + .slider:before {
+  transform: translateX(18px);
+  background-color: #ffffff;
+}
 
-.setting-number {
-  width: 5.5vw;
-  min-width: 70px;
-  background: #111;
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 0.4vw;
+/* Quick Preset Chips + Number Input */
+.control-cluster {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.chip-group {
+  display: flex;
+  gap: 4px;
+}
+.chip-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 4px 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chip-btn:hover {
+  background: rgba(255,255,255,0.1);
   color: #fff;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.25vw;
-  letter-spacing: 0.15vw;
-  padding: 0.45vh 0.6vw;
+}
+.chip-btn.active {
+  background: rgba(59, 130, 246, 0.22);
+  border-color: rgba(96, 165, 250, 0.5);
+  color: #93c5fd;
+}
+.setting-number {
+  width: 64px;
+  background: #0a0c10;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  padding: 5px 8px;
   text-align: center;
   outline: none;
 }
-.setting-number:focus { border-color: rgba(255,255,255,0.4); }
+.setting-number:focus {
+  border-color: #3b82f6;
+}
 
+/* Color Picker Control */
+.color-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.color-hex {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
 .setting-color {
   -webkit-appearance: none;
   border: 1px solid rgba(255,255,255,0.2);
-  width: 3vw;
-  min-width: 42px;
-  height: 1.9vw;
-  min-height: 26px;
-  border-radius: 0.4vw;
+  width: 34px;
+  height: 26px;
+  border-radius: 7px;
   background: none;
   cursor: pointer;
   padding: 0;
+  overflow: hidden;
 }
-.setting-color::-webkit-color-swatch-wrapper { padding: 2px; }
-.setting-color::-webkit-color-swatch { border: none; border-radius: 0.25vw; }
+.setting-color::-webkit-color-swatch-wrapper { padding: 0; }
+.setting-color::-webkit-color-swatch { border: none; border-radius: 6px; }
 
-.settings-actions {
+/* Expression Lab Grid */
+.lab-intro {
+  font-size: 12px;
+  color: var(--ui-muted);
+  line-height: 1.4;
+}
+.expression-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.expr-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 10px 8px;
+  cursor: pointer;
   display: flex;
-  gap: 1vw;
-  margin-top: 0.4vh;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.16s ease;
+  text-align: center;
+}
+.expr-card:hover {
+  background: rgba(76, 195, 255, 0.1);
+  border-color: rgba(76, 195, 255, 0.4);
+  transform: translateY(-1px);
+}
+.expr-icon {
+  font-size: 18px;
+  line-height: 1.1;
+}
+.expr-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+.expr-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: #64748b;
+}
+
+.btn-outline-sm {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.16s;
+  white-space: nowrap;
+}
+.btn-outline-sm:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.24);
+}
+
+/* Modal Footer */
+.settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.22);
+}
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 .btn-primary {
   flex: 1;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 0.5vw;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  border: 1px solid rgba(147, 197, 253, 0.35);
+  border-radius: 10px;
   color: #fff;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.2vw;
-  letter-spacing: 0.25vw;
-  padding: 1vh 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
   cursor: pointer;
-  transition: background 0.2s;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  transition: filter 0.18s, transform 0.15s;
 }
-.btn-primary:hover { background: rgba(255,255,255,0.2); }
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
 
 /* ── Fullscreen Pixel Eyes Overlay ── */
 .idle-overlay {
   position: fixed;
   inset: 0;
-  background: #080808;
+  background: #060709;
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.6s ease;
+  transition: opacity 0.55s ease;
   cursor: pointer;
 }
 .idle-overlay.active {
@@ -606,13 +1013,76 @@ input:checked + .slider:before { transform: translateX(115%); background-color: 
   height: 100%;
   display: block;
 }
+
+/* Expression Lab Floating HUD (only visible when launched from Expression Lab) */
+.lab-hud {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: rgba(15, 18, 24, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  font-family: 'Inter', sans-serif;
+}
+.lab-hud.visible {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(-50%) translateY(0);
+}
+.lab-hud-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.lab-hud-btn:hover { background: rgba(255, 255, 255, 0.16); }
+.lab-hud-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: #93c5fd;
+  padding: 0 8px;
+  min-width: 120px;
+  text-align: center;
+}
 </style>
 </head>
 <body>
 
-<!-- Top-right Settings Gear -->
+<!-- Top-right Pro Control Dock -->
 <div class="top-right">
-  <button class="gear-btn" id="gear-btn" title="Settings">
+  <button class="dock-btn" id="preview-eyes-btn" title="Launch Pixel Eyes Screensaver">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  </button>
+  <button class="dock-btn" id="fullscreen-btn" title="Toggle Fullscreen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 3 21 3 21 9"/>
+      <polyline points="9 21 3 21 3 15"/>
+      <line x1="21" y1="3" x2="14" y2="10"/>
+      <line x1="3" y1="21" x2="10" y2="14"/>
+    </svg>
+  </button>
+  <div class="dock-divider"></div>
+  <button class="dock-btn gear-btn" id="gear-btn" title="Settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="3"/>
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -625,7 +1095,7 @@ input:checked + .slider:before { transform: translateX(115%); background-color: 
     <div class="segment" id="hours"></div>
     <div class="separator"><div class="dot"></div><div class="dot"></div></div>
     <div class="segment" id="minutes"></div>
-    <div class="separator"><div class="dot"></div><div class="dot"></div></div>
+    <div class="separator" id="sec-sep"><div class="dot"></div><div class="dot"></div></div>
     <div class="segment" id="seconds"></div>
   </div>
   <div class="info-block">
@@ -659,108 +1129,248 @@ input:checked + .slider:before { transform: translateX(115%); background-color: 
 <!-- City search modal -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
-    <div class="modal-title" id="modal-title">SEARCH CITY</div>
-    <div class="modal-input-wrap">
-      <input class="modal-input" id="modal-input" type="text" placeholder="TYPE A CITY NAME..." autocomplete="off" spellcheck="false">
-      <button class="modal-search-btn" id="modal-search-btn">GO</button>
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <div class="modal-title" id="modal-title">SEARCH CITY</div>
+        <div class="modal-subtitle">Select a city for weather or world time</div>
+      </div>
+      <button class="modal-close-x" id="modal-cancel" title="Close">✕</button>
     </div>
-    <div class="modal-results" id="modal-results"></div>
-    <div class="modal-status" id="modal-status"></div>
-    <button class="modal-cancel" id="modal-cancel">CANCEL</button>
+    <div class="city-modal-body">
+      <div class="modal-input-wrap">
+        <input class="modal-input" id="modal-input" type="text" placeholder="Type a city name (e.g. Tokyo, Manila, Sydney)..." autocomplete="off" spellcheck="false">
+        <button class="modal-search-btn" id="modal-search-btn">Search</button>
+      </div>
+      <div class="modal-results" id="modal-results"></div>
+      <div class="modal-status" id="modal-status"></div>
+    </div>
   </div>
 </div>
 
-<!-- Settings Modal -->
+<!-- Pro Settings Modal -->
 <div class="modal-overlay" id="settings-overlay">
-  <div class="modal">
-    <div class="modal-title">IDLE ANIMATION SETTINGS</div>
-
-    <div class="setting-row">
-      <div>
-        <div class="setting-label">ENABLE IDLE EYES</div>
-        <div class="setting-sub">SHOW PIXEL EYES WHEN INACTIVE</div>
+  <div class="modal settings-modal">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <div class="modal-title">CLOCK &amp; PIXEL COMPANION SETTINGS</div>
+        <div class="modal-subtitle">Customize idle animations, LED colors, and clock display</div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="set-idle-enabled">
-        <span class="slider"></span>
-      </label>
+      <button class="modal-close-x" id="settings-cancel" title="Close">✕</button>
     </div>
 
-    <div class="setting-row">
-      <div>
-        <div class="setting-label">EXPRESSIVE MOODS</div>
-        <div class="setting-sub">WINK, ANGRY, SUSPICIOUS, JOY &amp; SLEEP</div>
+    <div class="settings-tabs">
+      <button class="tab-btn active" data-tab="tab-eyes">Idle Eyes</button>
+      <button class="tab-btn" data-tab="tab-lab">Expression Lab</button>
+      <button class="tab-btn" data-tab="tab-clock">Clock &amp; Display</button>
+    </div>
+
+    <div class="settings-body">
+      <!-- TAB 1: IDLE EYES -->
+      <div class="tab-panel active" id="tab-eyes">
+        <div class="preview-banner">
+          <canvas id="mini-preview-canvas" width="138" height="66"></canvas>
+          <div class="preview-info">
+            <div class="preview-title">LED Matrix Color Theme</div>
+            <div class="swatches-row" id="theme-swatches">
+              <button type="button" class="swatch-btn" data-eye="#4cc3ff" data-pupil="#08182b" style="background:#4cc3ff" title="Cyber Cyan"></button>
+              <button type="button" class="swatch-btn" data-eye="#34d399" data-pupil="#051c14" style="background:#34d399" title="Matrix Emerald"></button>
+              <button type="button" class="swatch-btn" data-eye="#fbbf24" data-pupil="#241304" style="background:#fbbf24" title="Amber CRT"></button>
+              <button type="button" class="swatch-btn" data-eye="#f472b6" data-pupil="#260817" style="background:#f472b6" title="Sakura Rose"></button>
+              <button type="button" class="swatch-btn" data-eye="#a78bfa" data-pupil="#160d2e" style="background:#a78bfa" title="Ultra Violet"></button>
+              <button type="button" class="swatch-btn" data-eye="#e2e8f0" data-pupil="#0f172a" style="background:#e2e8f0" title="Arctic Monochrome"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-group-label">Behavior &amp; Features</div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Enable Idle Pixel Eyes</div>
+            <div class="setting-sub">Automatically launch the animated LED companion after inactivity</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="set-idle-enabled">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Expressive Moods</div>
+            <div class="setting-sub">Heart eyes, kiss, cool shades, starstruck, bubblegum, dizzy, vibing &amp; more</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="set-idle-expressive">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Animated Pixel Mouth</div>
+            <div class="setting-sub">Dynamic expressions, yawns, giggles, and bubble gum</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="set-idle-mouth">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Cursor &amp; Multi-Monitor Tracking</div>
+            <div class="setting-sub">Follow mouse pointer and glance up when exiting toward top monitor</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="set-idle-track">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-group-label">Timing &amp; Colors</div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Idle Wait Time (Minutes)</div>
+            <div class="setting-sub">Inactivity duration before screensaver starts</div>
+          </div>
+          <div class="control-cluster">
+            <div class="chip-group" data-target="set-idle-mins">
+              <button type="button" class="chip-btn" data-val="0.25">15s</button>
+              <button type="button" class="chip-btn" data-val="5">5m</button>
+              <button type="button" class="chip-btn" data-val="10">10m</button>
+            </div>
+            <input type="number" id="set-idle-mins" class="setting-number" min="0.02" max="240" step="any" value="10">
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Pixel Clock Peek (Minutes)</div>
+            <div class="setting-sub">How often the digital clock rises up (0 = disabled)</div>
+          </div>
+          <div class="control-cluster">
+            <div class="chip-group" data-target="set-clock-mins">
+              <button type="button" class="chip-btn" data-val="0">Off</button>
+              <button type="button" class="chip-btn" data-val="2">2m</button>
+              <button type="button" class="chip-btn" data-val="5">5m</button>
+            </div>
+            <input type="number" id="set-clock-mins" class="setting-number" min="0" max="240" step="any" value="5">
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Custom Iris &amp; Pupil Colors</div>
+            <div class="setting-sub">Fine-tune outer LED glow and inner pupil shade</div>
+          </div>
+          <div class="control-cluster">
+            <div class="color-control">
+              <span class="color-hex" id="eye-hex-label">#4CC3FF</span>
+              <input type="color" id="set-idle-eye-color" class="setting-color" value="#4cc3ff" title="Eye / Iris Color">
+            </div>
+            <div class="color-control">
+              <input type="color" id="set-idle-pupil-color" class="setting-color" value="#08182b" title="Pupil Color">
+            </div>
+          </div>
+        </div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="set-idle-expressive">
-        <span class="slider"></span>
-      </label>
-    </div>
 
-    <div class="setting-row">
-      <div>
-        <div class="setting-label">CUTE PIXEL MOUTH</div>
-        <div class="setting-sub">MATCHING MOUTH FOR EACH EXPRESSION</div>
+      <!-- TAB 2: EXPRESSION LAB -->
+      <div class="tab-panel" id="tab-lab">
+        <div class="lab-intro">
+          Click any expression below to preview it fullscreen on the LED matrix right away.
+        </div>
+        <div class="expression-grid" id="expression-grid"></div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="set-idle-mouth">
-        <span class="slider"></span>
-      </label>
-    </div>
 
-    <div class="setting-row">
-      <div>
-        <div class="setting-label">FOLLOW MOUSE IN WINDOW</div>
-        <div class="setting-sub">TRACK CURSOR &amp; FOLLOW LEFT EXIT UP</div>
+      <!-- TAB 3: CLOCK & DISPLAY -->
+      <div class="tab-panel" id="tab-clock">
+        <div class="setting-group-label">Main Flip Clock</div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">24-Hour Time Format</div>
+            <div class="setting-sub">Display 00:00–23:59 instead of 12-hour AM/PM</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="set-clock-24h">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Show Seconds Flip Cards</div>
+            <div class="setting-sub">Hide for a minimalist hours &amp; minutes desk clock</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="set-clock-seconds" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Show Weather Pill</div>
+            <div class="setting-sub">Display live temperature and conditions below the date</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="set-clock-weather" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Show Secondary World Clock</div>
+            <div class="setting-sub">Bottom-right timezone widget (also shown in Pixel Clock Peek)</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="set-clock-sec-visible" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-group-label">Locations &amp; Timezones</div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Local Weather Location</div>
+            <div class="setting-sub" id="settings-main-loc-label">Not set</div>
+          </div>
+          <button type="button" class="btn-outline-sm" id="settings-change-main-loc">Change</button>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-text">
+            <div class="setting-label">Secondary Clock City</div>
+            <div class="setting-sub" id="settings-sec-loc-label">WOLLONGONG · AU</div>
+          </div>
+          <button type="button" class="btn-outline-sm" id="settings-change-sec-loc">Change</button>
+        </div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="set-idle-track">
-        <span class="slider"></span>
-      </label>
     </div>
 
-    <div class="setting-row">
-      <div>
-        <div class="setting-label">IDLE WAIT TIME (MINUTES)</div>
-        <div class="setting-sub">E.G. 10, 15, OR 0.05 TO TEST</div>
-      </div>
-      <input type="number" id="set-idle-mins" class="setting-number" min="0.02" max="240" step="any" value="10">
+    <div class="settings-footer">
+      <button type="button" class="btn-secondary" id="settings-test-now">Test Screensaver</button>
+      <button type="button" class="btn-primary" id="settings-save">Save Changes</button>
     </div>
-
-    <div class="setting-row">
-      <div>
-        <div class="setting-label">PIXEL CLOCK INTERVAL (MINUTES)</div>
-        <div class="setting-sub">HOW OFTEN CLOCK PEEKS (0 = OFF)</div>
-      </div>
-      <input type="number" id="set-clock-mins" class="setting-number" min="0" max="240" step="any" value="5">
-    </div>
-
-    <div class="setting-row">
-      <div>
-        <div class="setting-label">EYE / IRIS COLOR</div>
-        <div class="setting-sub">OUTER PIXEL SHADING COLOR</div>
-      </div>
-      <input type="color" id="set-idle-eye-color" class="setting-color" value="#4cc3ff">
-    </div>
-
-    <div class="setting-row">
-      <div>
-        <div class="setting-label">PUPIL COLOR</div>
-        <div class="setting-sub">INNER CENTER PIXEL COLOR</div>
-      </div>
-      <input type="color" id="set-idle-pupil-color" class="setting-color" value="#08182b">
-    </div>
-
-    <div class="settings-actions">
-      <button class="btn-primary" id="settings-save">SAVE &amp; CLOSE</button>
-    </div>
-    <button class="modal-cancel" id="settings-cancel">CANCEL</button>
   </div>
 </div>
 
 <!-- Fullscreen Pixel Eyes Screensaver -->
-<div class="idle-overlay" id="idle-overlay" title="Click anywhere to return to clock">
+<div class="idle-overlay" id="idle-overlay" title="Click anywhere or press any key to return to clock">
   <canvas id="eyes-canvas"></canvas>
+</div>
+
+<!-- Expression Lab HUD (shown only when launched from Expression Lab) -->
+<div class="lab-hud" id="lab-hud">
+  <button type="button" class="lab-hud-btn" id="lab-prev-btn">◀ Prev</button>
+  <span class="lab-hud-label" id="lab-hud-label">HEART EYES</span>
+  <button type="button" class="lab-hud-btn" id="lab-next-btn">Next ▶</button>
+  <button type="button" class="lab-hud-btn" id="lab-exit-btn">Exit</button>
 </div>
 
 <script>
@@ -770,7 +1380,7 @@ input:checked + .slider:before { transform: translateX(115%); background-color: 
    FlipCard
 ══════════════════════════════════════ */
 class FlipCard {
-  constructor(parent) {
+  constructor(parent, withAmPm = false) {
     this.el = document.createElement('div');
     this.el.className = 'card';
     parent.appendChild(this.el);
@@ -784,11 +1394,23 @@ class FlipCard {
     this.fBotD  = this._digit(this.fBot);
     this._el('div','divider');
     this._el('div','card-border');
+    if (withAmPm) {
+      this.ampmEl = this._el('div', 'ampm-badge');
+    }
     this.current = null;
     this.busy    = false;
   }
   _el(tag,cls){ const e=document.createElement(tag); e.className=cls; this.el.appendChild(e); return e; }
   _digit(p){ const e=document.createElement('div'); e.className='digit'; p.appendChild(e); return e; }
+  setAmPm(txt) {
+    if (!this.ampmEl) return;
+    if (!txt) {
+      this.ampmEl.classList.add('hidden');
+    } else {
+      this.ampmEl.classList.remove('hidden');
+      this.ampmEl.textContent = txt;
+    }
+  }
   init(val){
     val=String(val); this.current=val;
     [this.stTopD,this.stBotD,this.fTopD,this.fBotD].forEach(d=>d.textContent=val);
@@ -817,9 +1439,10 @@ class FlipCard {
 /* ══════════════════════════════════════
    localStorage helpers
 ══════════════════════════════════════ */
-const LS_MAIN = 'flipclock_main_location';
-const LS_SEC  = 'flipclock_sec_location';
-const LS_IDLE = 'flipclock_idle_settings';
+const LS_MAIN  = 'flipclock_main_location';
+const LS_SEC   = 'flipclock_sec_location';
+const LS_IDLE  = 'flipclock_idle_settings';
+const LS_CLOCK = 'flipclock_display_settings';
 
 function lsSave(key,obj){ try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} }
 function lsLoad(key){ try{ const v=localStorage.getItem(key); return v?JSON.parse(v):null; }catch(e){ return null; } }
@@ -837,6 +1460,13 @@ let weatherLabel   = '';
 let secTimezone  = 'Australia/Sydney';
 let secCityLabel = 'WOLLONGONG · AU';
 
+let clockConfig = Object.assign({
+  use24h: false,
+  showSeconds: true,
+  showWeather: true,
+  secVisible: true
+}, lsLoad(LS_CLOCK) || {});
+
 const savedMain = lsLoad(LS_MAIN);
 if(savedMain){
   mainWeatherLat = savedMain.lat;
@@ -850,17 +1480,34 @@ if(savedSec){
 }
 
 let prevH='',prevM='',prevS='';
-let secVisible = true;
+let secVisible = clockConfig.secVisible !== false;
 
-function makeCards(id,n){
+function makeCards(id, n, firstHasAmPm = false){
   const seg=document.getElementById(id);
-  return Array.from({length:n},()=>new FlipCard(seg));
+  return Array.from({length:n},(_, idx)=>new FlipCard(seg, firstHasAmPm && idx === 0));
 }
-const hCards=makeCards('hours',2);
-const mCards=makeCards('minutes',2);
-const sCards=makeCards('seconds',2);
+const hCards=makeCards('hours',2, true);
+const mCards=makeCards('minutes',2, false);
+const sCards=makeCards('seconds',2, false);
 
 document.getElementById('sec-city-name').textContent = secCityLabel;
+
+const eyeOpen = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+const eyeOff  = `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+
+function applyClockDisplayPrefs() {
+  document.body.classList.toggle('no-seconds', !clockConfig.showSeconds);
+  document.getElementById('seconds').classList.toggle('hidden', !clockConfig.showSeconds);
+  document.getElementById('sec-sep').classList.toggle('hidden', !clockConfig.showSeconds);
+  document.getElementById('weather-row').classList.toggle('hidden', !clockConfig.showWeather);
+
+  secVisible = clockConfig.secVisible !== false;
+  document.getElementById('sec-widget').classList.toggle('hidden', !secVisible);
+  document.getElementById('eye-icon').innerHTML = secVisible ? eyeOpen : eyeOff;
+
+  prevH = '';
+  updateClock();
+}
 
 /* ══════════════════════════════════════
    Main flip clock
@@ -869,10 +1516,13 @@ function getMainNow(){ return new Date(); }
 
 function updateClock(){
   const now = getMainNow();
-  const raw = now.getHours() % 12 || 12;
+  const hrs24 = now.getHours();
+  const raw = clockConfig.use24h ? hrs24 : (hrs24 % 12 || 12);
   const h=String(raw).padStart(2,'0');
   const m=String(now.getMinutes()).padStart(2,'0');
   const s=String(now.getSeconds()).padStart(2,'0');
+
+  hCards[0].setAmPm(clockConfig.use24h ? '' : (hrs24 >= 12 ? 'PM' : 'AM'));
 
   if(!prevH){
     hCards[0].init(h[0]); hCards[1].init(h[1]);
@@ -903,34 +1553,44 @@ function updateSecClock(){
     const raw = now.toLocaleTimeString('en-US', {
       timeZone: secTimezone,
       hour: '2-digit', minute: '2-digit', second: '2-digit',
-      hour12: true
+      hour12: !clockConfig.use24h
     });
     const parts = raw.trim().split(' ');
     document.getElementById('sec-time').textContent = parts[0]||'--:--:--';
-    document.getElementById('sec-ampm').textContent = (parts[1]||'').toUpperCase();
+    document.getElementById('sec-ampm').textContent = clockConfig.use24h ? '24H' : (parts[1]||'').toUpperCase();
   } catch(e){
     document.getElementById('sec-time').textContent = '--:--:--';
     document.getElementById('sec-ampm').textContent = '';
   }
 }
 
-/* ══════════════════════════════════════
-   Eye toggle (secondary clock)
-══════════════════════════════════════ */
-const eyeOpen = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
-const eyeOff  = `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`;
-
 document.getElementById('eye-btn').addEventListener('click',()=>{
-  secVisible=!secVisible;
+  secVisible = !secVisible;
+  clockConfig.secVisible = secVisible;
+  lsSave(LS_CLOCK, clockConfig);
   document.getElementById('sec-widget').classList.toggle('hidden',!secVisible);
   document.getElementById('eye-icon').innerHTML = secVisible ? eyeOpen : eyeOff;
   if (isIdleActive) drawEyes();
 });
 
+/* Top-right Quick Actions */
+document.getElementById('preview-eyes-btn').addEventListener('click', () => {
+  startIdleEyes();
+});
+
+document.getElementById('fullscreen-btn').addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen?.().catch(() => {});
+  } else {
+    document.exitFullscreen?.().catch(() => {});
+  }
+});
+
 /* ══════════════════════════════════════
    Tick
 ══════════════════════════════════════ */
-updateClock(); updateSecClock();
+applyClockDisplayPrefs();
+updateSecClock();
 const drift = 1000-(Date.now()%1000);
 setTimeout(()=>{
   updateClock(); updateSecClock();
@@ -966,7 +1626,7 @@ async function fetchWeather(lat,lon,label){
 
 function showSetLocationPrompt(){
   document.getElementById('weather-row').innerHTML =
-    '<span style="color:#444;cursor:pointer" id="set-loc-link">📍 CLICK TO SET YOUR LOCATION</span>';
+    '<span style="color:#64748b;cursor:pointer" id="set-loc-link">📍 CLICK TO SET YOUR LOCATION</span>';
   document.getElementById('set-loc-link').addEventListener('click',()=>openModal('main'));
 }
 
@@ -995,7 +1655,7 @@ let modalMode = 'sec';
 function openModal(mode){
   modalMode = mode;
   document.getElementById('modal-title').textContent =
-    mode==='main' ? 'SET YOUR LOCATION' : 'SET SECOND CLOCK CITY';
+    mode==='main' ? 'SET WEATHER LOCATION' : 'SET SECOND CLOCK CITY';
   document.getElementById('modal-input').value='';
   document.getElementById('modal-results').innerHTML='';
   document.getElementById('modal-status').textContent='';
@@ -1016,14 +1676,14 @@ document.getElementById('modal-overlay').addEventListener('click',e=>{
 async function searchCity(query){
   const status=document.getElementById('modal-status');
   const results=document.getElementById('modal-results');
-  status.textContent='SEARCHING…';
+  status.textContent='Searching…';
   results.innerHTML='';
   try{
     const res=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=8&language=en&format=json`);
     const data=await res.json();
     status.textContent='';
     if(!data.results||!data.results.length){
-      status.textContent='NO RESULTS FOUND';
+      status.textContent='No matching cities found';
       return;
     }
     data.results.forEach(place=>{
@@ -1037,7 +1697,7 @@ async function searchCity(query){
       results.appendChild(item);
     });
   } catch(e){
-    status.textContent='SEARCH FAILED — CHECK CONNECTION';
+    status.textContent='Search failed — check internet connection';
   }
 }
 
@@ -1060,6 +1720,7 @@ function selectPlace(place){
     document.getElementById('sec-city-name').textContent=label;
     updateSecClock();
   }
+  updateSettingsLocationLabels();
   closeModal();
 }
 
@@ -1075,7 +1736,7 @@ document.getElementById('modal-input').addEventListener('keydown',e=>{
 });
 
 /* ══════════════════════════════════════
-   Idle Pixel Eyes Settings & Engine
+   Idle Pixel Eyes Settings & Pro UI
 ══════════════════════════════════════ */
 let idleConfig = Object.assign({
   enabled: true,
@@ -1092,6 +1753,144 @@ const settingsOverlay = document.getElementById('settings-overlay');
 const idleOverlay     = document.getElementById('idle-overlay');
 const canvas          = document.getElementById('eyes-canvas');
 const ctx             = canvas.getContext('2d');
+const miniCanvas      = document.getElementById('mini-preview-canvas');
+const miniCtx         = miniCanvas.getContext('2d');
+
+/* Tab switching */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* Quick Preset Chips */
+function syncChipStates() {
+  document.querySelectorAll('.chip-group').forEach(group => {
+    const input = document.getElementById(group.dataset.target);
+    if (!input) return;
+    const currentVal = parseFloat(input.value);
+    group.querySelectorAll('.chip-btn').forEach(chip => {
+      const chipVal = parseFloat(chip.dataset.val);
+      chip.classList.toggle('active', Math.abs(currentVal - chipVal) < 0.001);
+    });
+  });
+}
+
+document.querySelectorAll('.chip-group').forEach(group => {
+  group.querySelectorAll('.chip-btn').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const input = document.getElementById(group.dataset.target);
+      if (input) {
+        input.value = chip.dataset.val;
+        syncChipStates();
+      }
+    });
+  });
+});
+
+['set-idle-mins', 'set-clock-mins'].forEach(id => {
+  document.getElementById(id).addEventListener('input', syncChipStates);
+});
+
+/* Theme Swatches & Mini Live Matrix Preview */
+function renderMiniPreview() {
+  const eyeCol   = document.getElementById('set-idle-eye-color').value || '#4cc3ff';
+  const pupilCol = document.getElementById('set-idle-pupil-color').value || '#08182b';
+  const showMouth = document.getElementById('set-idle-mouth').checked;
+
+  document.getElementById('eye-hex-label').textContent = eyeCol.toUpperCase();
+  document.querySelectorAll('.swatch-btn').forEach(sw => {
+    sw.classList.toggle('active', sw.dataset.eye.toLowerCase() === eyeCol.toLowerCase());
+  });
+
+  const w = miniCanvas.width;
+  const h = miniCanvas.height;
+  miniCtx.fillStyle = '#08090c';
+  miniCtx.fillRect(0, 0, w, h);
+
+  const cols = 23;
+  const rows = 11;
+  const cell = 6;
+  const gap = 1;
+  const pxSize = cell - gap;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      miniCtx.fillStyle = '#14171d';
+      miniCtx.fillRect(c * cell + 0.5, r * cell + 0.5, pxSize, pxSize);
+    }
+  }
+
+  function dot(gx, gy, col) {
+    if (gx < 0 || gx >= cols || gy < 0 || gy >= rows) return;
+    miniCtx.fillStyle = col;
+    miniCtx.fillRect(gx * cell + 0.5, gy * cell + 0.5, pxSize, pxSize);
+  }
+
+  const miniSocket = [
+    "01110",
+    "11111",
+    "11111",
+    "11111",
+    "11111",
+    "01110"
+  ];
+
+  [5, 15].forEach(cx => {
+    for (let r = 0; r < 6; r++) {
+      const col = shadeColor(eyeCol, 0.65 + (r / 5) * 0.7);
+      for (let c = 0; c < 5; c++) {
+        if (miniSocket[r][c] === '1') {
+          dot(cx - 2 + c, 2 + r, col);
+        }
+      }
+    }
+    for (let pr = 0; pr < 3; pr++) {
+      for (let pc = 0; pc < 3; pc++) {
+        dot(cx - 1 + pc, 3 + pr, pupilCol);
+      }
+    }
+    dot(cx - 1, 3, '#ffffff');
+  });
+
+  if (showMouth) {
+    const mCol = shadeColor(eyeCol, 1.3);
+    dot(10, 8, mCol);
+    dot(12, 8, mCol);
+    dot(11, 9, mCol);
+  }
+}
+
+document.querySelectorAll('.swatch-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('set-idle-eye-color').value = btn.dataset.eye;
+    document.getElementById('set-idle-pupil-color').value = btn.dataset.pupil;
+    renderMiniPreview();
+  });
+});
+
+['set-idle-eye-color', 'set-idle-pupil-color', 'set-idle-mouth'].forEach(id => {
+  document.getElementById(id).addEventListener('input', renderMiniPreview);
+  document.getElementById(id).addEventListener('change', renderMiniPreview);
+});
+
+function updateSettingsLocationLabels() {
+  document.getElementById('settings-main-loc-label').textContent =
+    weatherLabel ? weatherLabel : 'Not set (click Change to choose)';
+  document.getElementById('settings-sec-loc-label').textContent = secCityLabel;
+}
+
+document.getElementById('settings-change-main-loc').addEventListener('click', () => {
+  closeSettings();
+  openModal('main');
+});
+document.getElementById('settings-change-sec-loc').addEventListener('click', () => {
+  closeSettings();
+  openModal('sec');
+});
 
 document.getElementById('gear-btn').addEventListener('click', () => {
   document.getElementById('set-idle-enabled').checked    = idleConfig.enabled;
@@ -1102,6 +1901,15 @@ document.getElementById('gear-btn').addEventListener('click', () => {
   document.getElementById('set-clock-mins').value        = idleConfig.clockIntervalMins;
   document.getElementById('set-idle-eye-color').value    = idleConfig.eyeColor;
   document.getElementById('set-idle-pupil-color').value  = idleConfig.pupilColor;
+
+  document.getElementById('set-clock-24h').checked         = !!clockConfig.use24h;
+  document.getElementById('set-clock-seconds').checked     = clockConfig.showSeconds !== false;
+  document.getElementById('set-clock-weather').checked     = clockConfig.showWeather !== false;
+  document.getElementById('set-clock-sec-visible').checked = secVisible;
+
+  updateSettingsLocationLabels();
+  syncChipStates();
+  renderMiniPreview();
   settingsOverlay.classList.add('open');
 });
 
@@ -1114,7 +1922,7 @@ settingsOverlay.addEventListener('click', e => {
   if (e.target === settingsOverlay) closeSettings();
 });
 
-document.getElementById('settings-save').addEventListener('click', () => {
+function saveSettingsFromForm() {
   const enabled    = document.getElementById('set-idle-enabled').checked;
   const expressive = document.getElementById('set-idle-expressive').checked;
   const showMouth  = document.getElementById('set-idle-mouth').checked;
@@ -1137,6 +1945,20 @@ document.getElementById('settings-save').addEventListener('click', () => {
     pupilColor
   };
   lsSave(LS_IDLE, idleConfig);
+
+  clockConfig = {
+    use24h: document.getElementById('set-clock-24h').checked,
+    showSeconds: document.getElementById('set-clock-seconds').checked,
+    showWeather: document.getElementById('set-clock-weather').checked,
+    secVisible: document.getElementById('set-clock-sec-visible').checked
+  };
+  lsSave(LS_CLOCK, clockConfig);
+  applyClockDisplayPrefs();
+  updateSecClock();
+}
+
+document.getElementById('settings-save').addEventListener('click', () => {
+  saveSettingsFromForm();
   closeSettings();
   resetIdleTimer();
   if (isIdleActive) {
@@ -1145,6 +1967,106 @@ document.getElementById('settings-save').addEventListener('click', () => {
       schedulePeriodicPixelClock();
     }
   }
+});
+
+document.getElementById('settings-test-now').addEventListener('click', () => {
+  saveSettingsFromForm();
+  closeSettings();
+  startIdleEyes();
+});
+
+/* ── Expression Lab Definitions & Interactive Preview ── */
+const LAB_EXPRESSIONS = [
+  { id: 'normal',     icon: '👀', name: 'Normal Gaze',   tag: 'IDLE' },
+  { id: 'happy',      icon: '😊', name: 'Happy Smile',   tag: 'WARM' },
+  { id: 'joy',        icon: '😆', name: 'Giggling',      tag: 'ANIM' },
+  { id: 'wink',       icon: '😉', name: 'Playful Wink',  tag: 'CUTE' },
+  { id: 'hearteyes',  icon: '😍', name: 'Heart & Kiss',  tag: 'SEQ'  },
+  { id: 'starstruck', icon: '🤩', name: 'Starstruck',    tag: 'NEW'  },
+  { id: 'cool',       icon: '😎', name: 'Cool Shades',   tag: 'NEW'  },
+  { id: 'vibing',     icon: '🎵', name: 'Vibing Beat',   tag: 'NEW'  },
+  { id: 'bubblegum',  icon: '🫧', name: 'Bubble Gum',    tag: 'SEQ'  },
+  { id: 'suspicious', icon: '😒', name: 'Suspicious',    tag: 'SIDE' },
+  { id: 'bored',      icon: '🙄', name: 'Bored Roll',    tag: 'ANIM' },
+  { id: 'sleepy',     icon: '🥱', name: 'Sleepy Yawn',   tag: 'SEQ'  },
+  { id: 'sleeping',   icon: '😴', name: 'Sleeping Zzz',  tag: 'LOOP' },
+  { id: 'shocked',    icon: '😲', name: 'Shocked',       tag: 'SWEAT'},
+  { id: 'dizzy',      icon: '😵‍💫', name: 'Dizzy Spiral',  tag: 'NEW'  },
+  { id: 'cry',        icon: '😭', name: 'Pixel Tears',   tag: 'NEW'  },
+  { id: 'glitch',     icon: '👾', name: 'Matrix Glitch', tag: 'NEW'  },
+  { id: 'angry',      icon: '😠', name: 'Grumpy Shift',  tag: 'ANIM' },
+  { id: 'clockpeek',  icon: '🕒', name: 'Clock Peek',    tag: 'PHYS' }
+];
+
+let labModeActive = false;
+let labCurrentIndex = 0;
+
+const exprGrid = document.getElementById('expression-grid');
+LAB_EXPRESSIONS.forEach((item, idx) => {
+  const card = document.createElement('button');
+  card.type = 'button';
+  card.className = 'expr-card';
+  card.innerHTML = `
+    <span class="expr-icon">${item.icon}</span>
+    <span class="expr-name">${item.name}</span>
+    <span class="expr-tag">${item.tag}</span>
+  `;
+  card.addEventListener('click', () => {
+    saveSettingsFromForm();
+    launchExpressionPreview(idx);
+  });
+  exprGrid.appendChild(card);
+});
+
+function launchExpressionPreview(idx) {
+  labCurrentIndex = (idx + LAB_EXPRESSIONS.length) % LAB_EXPRESSIONS.length;
+  const item = LAB_EXPRESSIONS[labCurrentIndex];
+  labModeActive = true;
+
+  if (!isIdleActive) {
+    startIdleEyes(true);
+  }
+  document.getElementById('lab-hud-label').textContent = item.name.toUpperCase();
+  document.getElementById('lab-hud').classList.add('visible');
+
+  clearTimeout(behaviorTimer);
+  clearTimeout(panToUltrawideTimer);
+  clearMoodGlanceTimers();
+  clearFightSleepTimers();
+  clearClockSequenceTimers();
+  clearBlinkTimers();
+  clearTimeout(periodicClockTimer);
+
+  clockModeActive = false;
+  bouncePhase = 'none';
+  curClockY = 23; tgtClockY = 23;
+  curEyeOffsetY = 0; tgtEyeOffsetY = 0;
+  eyeScaleX = 1.0; eyeScaleY = 1.0;
+  curBlink = 0; tgtBlink = 0;
+  sleepyYawnStage = 'idle';
+  resetBubbleGumState();
+  coolDropProgress = 0;
+  kissProgress = 0;
+
+  if (item.id === 'clockpeek') {
+    startPixelClockSequence(true);
+    return;
+  }
+
+  activateSpecificMood(item.id, true);
+}
+
+document.getElementById('lab-prev-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  launchExpressionPreview(labCurrentIndex - 1);
+});
+document.getElementById('lab-next-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  launchExpressionPreview(labCurrentIndex + 1);
+});
+document.getElementById('lab-exit-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  stopIdleEyes();
 });
 
 /* ── Idle Timer & Animation Sequence Helpers ── */
@@ -1163,22 +2085,18 @@ function clearMoodGlanceTimers() {
   moodGlanceTimers.forEach(t => clearTimeout(t));
   moodGlanceTimers = [];
 }
-
 function clearBlinkTimers() {
   blinkTimers.forEach(t => clearTimeout(t));
   blinkTimers = [];
 }
-
 function clearFightSleepTimers() {
   fightSleepTimers.forEach(t => clearTimeout(t));
   fightSleepTimers = [];
 }
-
 function clearClockSequenceTimers() {
   clockSequenceTimers.forEach(t => clearTimeout(t));
   clockSequenceTimers = [];
 }
-
 function resetBubbleGumState() {
   gumStage = 'none';
   gumStageTimer = 0;
@@ -1190,13 +2108,13 @@ function resetBubbleGumState() {
 
 function schedulePeriodicPixelClock() {
   clearTimeout(periodicClockTimer);
-  if (!isIdleActive || !idleConfig.clockIntervalMins || idleConfig.clockIntervalMins <= 0) return;
+  if (!isIdleActive || labModeActive || !idleConfig.clockIntervalMins || idleConfig.clockIntervalMins <= 0) return;
 
   const intervalMs = idleConfig.clockIntervalMins * 60 * 1000;
   periodicClockTimer = setTimeout(() => {
-    if (!isIdleActive) return;
+    if (!isIdleActive || labModeActive) return;
     if (!clockModeActive && bouncePhase === 'none') {
-      startPixelClockSequence();
+      startPixelClockSequence(false);
     } else {
       schedulePeriodicPixelClock();
     }
@@ -1209,7 +2127,7 @@ function resetIdleTimer() {
   if (!idleConfig.enabled) return;
 
   const ms = idleConfig.minutes * 60 * 1000;
-  idleTimeout = setTimeout(startIdleEyes, ms);
+  idleTimeout = setTimeout(() => startIdleEyes(false), ms);
 }
 
 ['mousemove', 'mousedown', 'keydown', 'touchstart', 'wheel'].forEach(evt => {
@@ -1219,13 +2137,19 @@ function resetIdleTimer() {
 });
 
 idleOverlay.addEventListener('click', stopIdleEyes);
-window.addEventListener('keydown', () => {
-  if (isIdleActive) stopIdleEyes();
+window.addEventListener('keydown', e => {
+  if (!isIdleActive) return;
+  if (labModeActive && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+    e.preventDefault();
+    launchExpressionPreview(labCurrentIndex + (e.key === 'ArrowRight' ? 1 : -1));
+    return;
+  }
+  stopIdleEyes();
 });
 
 /* ── In-Window Cursor Tracking & Left-Edge Exit Trigger ── */
 function updateGazeFromPointer(clientX, clientY) {
-  if (!isIdleActive || !idleConfig.trackMouse) return;
+  if (!isIdleActive || !idleConfig.trackMouse || labModeActive) return;
 
   lookUpModeUntil = 0;
   clearTimeout(panToUltrawideTimer);
@@ -1278,13 +2202,13 @@ function updateGazeFromPointer(clientX, clientY) {
 }
 
 window.addEventListener('mousemove', e => {
-  if (isIdleActive && idleConfig.trackMouse) {
+  if (isIdleActive && idleConfig.trackMouse && !labModeActive) {
     updateGazeFromPointer(e.clientX, e.clientY);
   }
 }, { passive: true });
 
 document.addEventListener('mouseleave', e => {
-  if (!isIdleActive || !idleConfig.trackMouse || clockModeActive || bouncePhase !== 'none') return;
+  if (!isIdleActive || !idleConfig.trackMouse || labModeActive || clockModeActive || bouncePhase !== 'none') return;
   lastMouseInsideTime = 0;
   clearTimeout(panToUltrawideTimer);
   clearMoodGlanceTimers();
@@ -1340,8 +2264,8 @@ let behaviorTimer = null;
 
 let currentMood = 'normal';
 let winkEyeSide = 'right';
-let sleepyYawnStage = 'idle'; // 'idle' | 'opening' | 'wide' | 'closing'
-let gumStage = 'none';        // 'none' | 'chew' | 'blow' | 'pop' | 'recover'
+let sleepyYawnStage = 'idle';
+let gumStage = 'none';
 let gumStageTimer = 0;
 let gumRadius = 0;
 let gumPopProgress = 0;
@@ -1355,7 +2279,12 @@ let angryMumbleTick = 0;
 let lastAngryMumbleTime = 0;
 let loveTick = 0;
 let lastLoveTime = 0;
-let kissProgress = 0; // 0..1 flying heart progress
+let kissProgress = 0;
+let coolDropProgress = 0;
+let fxTick = 0;
+let lastFxTime = 0;
+let breathOffsetY = 0;
+let lastBreathTime = 0;
 
 let curLookX = 0, curLookY = 0;
 let tgtLookX = 0, tgtLookY = 0;
@@ -1371,7 +2300,7 @@ let lastMouthAnimTime = 0;
 let curEyeOffsetY = 0, tgtEyeOffsetY = 0;
 let eyeVelY = 0;
 let eyeScaleX = 1.0, eyeScaleY = 1.0;
-let bouncePhase = 'none'; // 'none' | 'falling' | 'squashing' | 'settling'
+let bouncePhase = 'none';
 let bounceCount = 0;
 let squashTimer = 0;
 const INVISIBLE_FLOOR_OFFSET = 5;
@@ -1388,7 +2317,9 @@ function resizeCanvas() {
 }
 window.addEventListener('resize', resizeCanvas);
 
-// 13x14 Normal Rounded Eye Socket Mask
+/* ══════════════════════════════════════
+   Pixel Art Sprite Masks (46x22 Matrix)
+══════════════════════════════════════ */
 const SOCKET_MASK = [
   "0000111110000",
   "0011111111100",
@@ -1406,7 +2337,6 @@ const SOCKET_MASK = [
   "0000111110000"
 ];
 
-// 15x16 Wide Shocked Eye Socket Mask
 const SHOCKED_SOCKET = [
   "000001111100000",
   "000111111111000",
@@ -1426,7 +2356,6 @@ const SHOCKED_SOCKET = [
   "000001111100000"
 ];
 
-// 7x8 Normal Rounded Pupil Mask
 const PUPIL_MASK = [
   "0011100",
   "0111110",
@@ -1438,7 +2367,6 @@ const PUPIL_MASK = [
   "0011100"
 ];
 
-// 14x5 Happy Arch Mask (^ ^)
 const HAPPY_ARCH = [
   "00001111100000",
   "00111111111000",
@@ -1447,7 +2375,6 @@ const HAPPY_ARCH = [
   "11000000000110"
 ];
 
-// 15x8 Joy Dome + Upward-Curving Lower Eyelid Mask
 const JOY_DOME = [
   "000001111100000",
   "000111111111000",
@@ -1459,7 +2386,6 @@ const JOY_DOME = [
   "100000000000001"
 ];
 
-// 5x5 Pixel 'Z' Glyph for Sleeping mode
 const Z_GLYPH = [
   "11111",
   "00010",
@@ -1468,7 +2394,6 @@ const Z_GLYPH = [
   "11111"
 ];
 
-// 6x6 Pixel Anger Vein Mark
 const ANGER_GLYPH = [
   "010010",
   "110011",
@@ -1478,7 +2403,6 @@ const ANGER_GLYPH = [
   "010010"
 ];
 
-// 13x12 Heart Eye Mask for 😍
 const HEART_EYE_MASK = [
   "0011100011100",
   "0111110111110",
@@ -1494,7 +2418,87 @@ const HEART_EYE_MASK = [
   "0000001000000"
 ];
 
-// 11x6 Squeezed Chevron Wink Eye for 😘 (pointing inward)
+// 13x12 Star Eye Mask for Starstruck
+const STAR_EYE_MASK = [
+  "0000001000000",
+  "0000011100000",
+  "0000011100000",
+  "0000111110000",
+  "1111111111111",
+  "0111111111110",
+  "0011111111100",
+  "0001111111000",
+  "0011111111100",
+  "0011110111100",
+  "0111000001110",
+  "0100000000010"
+];
+
+// 11x11 Dizzy Spiral Eye Frames
+const DIZZY_SPIRALS = [
+  [
+    "00111111100",
+    "01000000010",
+    "10011111001",
+    "10100000101",
+    "10101110101",
+    "10101010101",
+    "10101100101",
+    "10100000101",
+    "10011111001",
+    "01000000010",
+    "00111111100"
+  ],
+  [
+    "00111111100",
+    "01000000010",
+    "10011111001",
+    "10100000101",
+    "10100110101",
+    "10101010101",
+    "10101110101",
+    "10100000101",
+    "10011111001",
+    "01000000010",
+    "00111111100"
+  ],
+  [
+    "00111111100",
+    "01000000010",
+    "10011111001",
+    "10100000101",
+    "10101110101",
+    "10101010101",
+    "10100110101",
+    "10100000101",
+    "10011111001",
+    "01000000010",
+    "00111111100"
+  ],
+  [
+    "00111111100",
+    "01000000010",
+    "10011111001",
+    "10100000101",
+    "10101100101",
+    "10101010101",
+    "10101110101",
+    "10100000101",
+    "10011111001",
+    "01000000010",
+    "00111111100"
+  ]
+];
+
+// 5x5 Pixel Music Note Glyph
+const MUSIC_NOTE_GLYPH = [
+  "00111",
+  "00101",
+  "00100",
+  "11100",
+  "11100"
+];
+
 const KISS_WINK_RIGHT = [
   "00001110000",
   "00111100000",
@@ -1513,7 +2517,6 @@ const KISS_WINK_LEFT = [
   "00001110000"
 ];
 
-// 7x6 Floating Flying Kiss Heart
 const FLYING_HEART_MASK = [
   "0110110",
   "1111111",
@@ -1523,8 +2526,6 @@ const FLYING_HEART_MASK = [
   "0001000"
 ];
 
-// 5x4 Cute Pixel Mouth Masks (anchored at x = 20..24, y = 16..19)
-// '1' = bright LED mouth color, '2' = pink tongue / bubble gum accent
 const MOUTH_MASKS = {
   normal: [
     "10001",
@@ -1591,265 +2592,92 @@ const MOUTH_MASKS = {
     "00110",
     "01100",
     "00110"
-  ]
-};
-
-// Giggling mouth animation frames for 'joy' expression
-const JOY_GIGGLE_FRAMES = [
-  // 0: classic 'w' giggle smile
-  [
-    "00000",
-    "10101",
-    "01010",
-    "00000"
   ],
-  // 1: open laughing 'w' with pink tongue
-  [
-    "10101",
-    "12121",
-    "01110",
-    "00000"
-  ],
-  // 2: lifted 'hee!' giggle
-  [
-    "10101",
-    "01010",
-    "00000",
-    "00000"
-  ],
-  // 3: open chuckle smile with pink tongue
-  [
+  starstruck: [
     "11111",
     "12221",
-    "01110",
-    "00000"
-  ]
-];
-
-// Chewing pink bubble gum frames ('1' = lip, '2' = pink gum)
-const GUM_CHEW_FRAMES = [
-  [
-    "00000",
-    "12221",
-    "01110",
-    "00000"
-  ],
-  [
-    "00000",
-    "01110",
-    "00000",
-    "00000"
-  ],
-  [
-    "00000",
-    "11221",
-    "00110",
-    "00000"
-  ],
-  [
-    "00000",
-    "12211",
-    "01100",
-    "00000"
-  ]
-];
-
-// Angry mumbling/muttering mouth frames
-const ANGRY_MUMBLE_FRAMES = [
-  [
-    "00100",
-    "01010",
-    "10001",
-    "00000"
-  ],
-  [
-    "00000",
-    "01110",
-    "10001",
-    "00000"
-  ],
-  [
-    "00000",
-    "01010",
-    "01110",
-    "00000"
-  ],
-  [
-    "00000",
-    "11111",
-    "00000",
-    "00000"
-  ]
-];
-
-// Yawning stages for 'sleepy' expression
-const SLEEPY_YAWN_MASKS = {
-  idle: [
-    "00100",
-    "01010",
-    "00100",
-    "00000"
-  ],
-  opening: [
-    "01110",
-    "10001",
-    "01110",
-    "00000"
-  ],
-  wide: [
-    "01110",
-    "10001",
     "12221",
     "01110"
   ],
-  closing: [
+  cool: [
+    "00000",
+    "00001",
     "01110",
-    "10001",
-    "01110",
+    "00000"
+  ],
+  vibing: [
+    "00000",
+    "10101",
+    "01010",
+    "00000"
+  ],
+  dizzy: [
+    "00000",
+    "10101",
+    "01010",
+    "00000"
+  ],
+  cry: [
+    "00000",
+    "01010",
+    "10101",
+    "00000"
+  ],
+  glitch: [
+    "00000",
+    "11011",
+    "00100",
     "00000"
   ]
 };
 
-// Subtle cute animation frames exclusively for the 'normal' U-smile mouth
-const NORMAL_MOUTH_FRAMES = [
-  // 0: classic U-smile
-  [
-    "10001",
-    "10001",
-    "01110",
-    "00000"
-  ],
-  // 1: gentle 1px soft bounce/squish
-  [
-    "00000",
-    "10001",
-    "01110",
-    "00000"
-  ],
-  // 2: cute tiny "o" chirp
-  [
-    "01110",
-    "10001",
-    "01110",
-    "00000"
-  ]
+const JOY_GIGGLE_FRAMES = [
+  ["00000", "10101", "01010", "00000"],
+  ["10101", "12121", "01110", "00000"],
+  ["10101", "01010", "00000", "00000"],
+  ["11111", "12221", "01110", "00000"]
 ];
 
-// 6x9 Thick LED Clock Digits (0–9)
-const CLOCK_DIGITS = {
-  '0': [
-    "011110",
-    "110011",
-    "110011",
-    "110011",
-    "110011",
-    "110011",
-    "110011",
-    "110011",
-    "011110"
-  ],
-  '1': [
-    "001100",
-    "011100",
-    "111100",
-    "001100",
-    "001100",
-    "001100",
-    "001100",
-    "001100",
-    "111111"
-  ],
-  '2': [
-    "011110",
-    "110011",
-    "000011",
-    "000110",
-    "001100",
-    "011000",
-    "110000",
-    "110011",
-    "111111"
-  ],
-  '3': [
-    "011110",
-    "110011",
-    "000011",
-    "001110",
-    "001110",
-    "000011",
-    "000011",
-    "110011",
-    "011110"
-  ],
-  '4': [
-    "000111",
-    "001111",
-    "011011",
-    "110011",
-    "111111",
-    "000011",
-    "000011",
-    "000011",
-    "000011"
-  ],
-  '5': [
-    "111111",
-    "110000",
-    "110000",
-    "111110",
-    "000011",
-    "000011",
-    "000011",
-    "110011",
-    "011110"
-  ],
-  '6': [
-    "011110",
-    "110011",
-    "110000",
-    "111110",
-    "110011",
-    "110011",
-    "110011",
-    "110011",
-    "011110"
-  ],
-  '7': [
-    "111111",
-    "110011",
-    "000011",
-    "000110",
-    "001100",
-    "001100",
-    "001100",
-    "001100",
-    "001100"
-  ],
-  '8': [
-    "011110",
-    "110011",
-    "110011",
-    "011110",
-    "011110",
-    "110011",
-    "110011",
-    "110011",
-    "011110"
-  ],
-  '9': [
-    "011110",
-    "110011",
-    "110011",
-    "110011",
-    "011111",
-    "000011",
-    "000011",
-    "110011",
-    "011110"
-  ]
+const GUM_CHEW_FRAMES = [
+  ["00000", "12221", "01110", "00000"],
+  ["00000", "01110", "00000", "00000"],
+  ["00000", "11221", "00110", "00000"],
+  ["00000", "12211", "01100", "00000"]
+];
+
+const ANGRY_MUMBLE_FRAMES = [
+  ["00100", "01010", "10001", "00000"],
+  ["00000", "01110", "10001", "00000"],
+  ["00000", "01010", "01110", "00000"],
+  ["00000", "11111", "00000", "00000"]
+];
+
+const SLEEPY_YAWN_MASKS = {
+  idle:    ["00100", "01010", "00100", "00000"],
+  opening: ["01110", "10001", "01110", "00000"],
+  wide:    ["01110", "10001", "12221", "01110"],
+  closing: ["01110", "10001", "01110", "00000"]
 };
 
-// 3x5 Mini Pixel Glyphs for Secondary Clock & AM/PM
+const NORMAL_MOUTH_FRAMES = [
+  ["10001", "10001", "01110", "00000"],
+  ["00000", "10001", "01110", "00000"],
+  ["01110", "10001", "01110", "00000"]
+];
+
+const CLOCK_DIGITS = {
+  '0': ["011110","110011","110011","110011","110011","110011","110011","110011","011110"],
+  '1': ["001100","011100","111100","001100","001100","001100","001100","001100","111111"],
+  '2': ["011110","110011","000011","000110","001100","011000","110000","110011","111111"],
+  '3': ["011110","110011","000011","001110","001110","000011","000011","110011","011110"],
+  '4': ["000111","001111","011011","110011","111111","000011","000011","000011","000011"],
+  '5': ["111111","110000","110000","111110","000011","000011","000011","110011","011110"],
+  '6': ["011110","110011","110000","111110","110011","110011","110011","110011","011110"],
+  '7': ["111111","110011","000011","000110","001100","001100","001100","001100","001100"],
+  '8': ["011110","110011","110011","011110","011110","110011","110011","110011","011110"],
+  '9': ["011110","110011","110011","110011","011111","000011","000011","110011","011110"]
+};
+
 const MINI_GLYPHS = {
   '0': ["111","101","101","101","111"],
   '1': ["010","110","010","010","111"],
@@ -1889,35 +2717,88 @@ const MINI_GLYPHS = {
   'Z': ["111","001","010","100","111"]
 };
 
+/* ══════════════════════════════════════
+   Upgraded LED Matrix Renderer (46x22)
+══════════════════════════════════════ */
 function drawEyes() {
   const w = canvas.width;
   const h = canvas.height;
 
-  ctx.fillStyle = '#0a0a0a';
+  ctx.fillStyle = '#060709';
   ctx.fillRect(0, 0, w, h);
 
   const cols = 46;
   const rows = 22;
-  const cellSize = Math.min(w / cols, h / rows);
+  const paddingFactor = 0.94;
+  const cellSize = Math.min((w * paddingFactor) / cols, (h * paddingFactor) / rows);
   const gap = Math.max(2, cellSize * 0.16);
   const pixelSize = cellSize - gap;
-  const radius = Math.max(1.5, pixelSize * 0.14);
+  const radius = Math.max(1.5, pixelSize * 0.16);
 
-  const offsetX = (w - cols * cellSize) / 2;
-  const offsetY = (h - rows * cellSize) / 2;
+  const gridW = cols * cellSize;
+  const gridH = rows * cellSize;
+  const offsetX = (w - gridW) / 2;
+  const offsetY = (h - gridH) / 2;
 
-  ctx.fillStyle = '#151515';
+  /* 1. Ambient OLED Screen Backlight Bloom */
+  const ambientTint = (currentMood === 'hearteyes' || currentMood === 'kiss')
+    ? '#ff2a6d'
+    : (currentMood === 'starstruck' ? '#fbbf24' : idleConfig.eyeColor);
+  const { r: ar, g: ag, b: ab } = hexToRgb(ambientTint);
+  const bloomGrad = ctx.createRadialGradient(
+    w / 2, h / 2, gridH * 0.1,
+    w / 2, h / 2, Math.max(gridW, gridH) * 0.68
+  );
+  bloomGrad.addColorStop(0, `rgba(${ar}, ${ag}, ${ab}, 0.085)`);
+  bloomGrad.addColorStop(0.65, `rgba(${ar}, ${ag}, ${ab}, 0.025)`);
+  bloomGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = bloomGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  /* 2. Hardware LED Matrix Housing Bezel */
+  const bezelPad = Math.max(10, cellSize * 0.48);
+  const bezelR = Math.max(10, cellSize * 0.45);
+  ctx.save();
+  ctx.fillStyle = '#0c0e12';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.065)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(offsetX - bezelPad, offsetY - bezelPad, gridW + bezelPad * 2, gridH + bezelPad * 2, bezelR);
+  ctx.fill();
+  ctx.stroke();
+
+  // Subtle corner hardware screw/status accents
+  const cornerInset = bezelPad * 0.48;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.09)';
+  [
+    [offsetX - cornerInset, offsetY - cornerInset],
+    [offsetX + gridW + cornerInset, offsetY - cornerInset],
+    [offsetX - cornerInset, offsetY + gridH + cornerInset],
+    [offsetX + gridW + cornerInset, offsetY + gridH + cornerInset]
+  ].forEach(([cx, cy]) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, Math.max(1.5, cellSize * 0.07), 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+
+  /* 3. Unlit Physical LED Diode Grid with Subtle Top Bevel */
   for (let gy = 0; gy < rows; gy++) {
     for (let gx = 0; gx < cols; gx++) {
       const px = offsetX + gx * cellSize + gap / 2;
       const py = offsetY + gy * cellSize + gap / 2;
+      ctx.fillStyle = '#13161c';
       ctx.beginPath();
       ctx.roundRect(px, py, pixelSize, pixelSize, radius);
       ctx.fill();
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.022)';
+      ctx.fillRect(px + radius * 0.5, py + 0.5, Math.max(1, pixelSize - radius), 1);
     }
   }
 
-  function lightLED(gx, gy, color, glow = true) {
+  /* 4. Tactile Lit LED Pixel Helper (Glow + Diode Body + Inner Specular Core) */
+  function lightLED(gx, gy, color, glow = true, specular = true) {
     const ix = Math.round(gx);
     const iy = Math.round(gy);
     if (ix < 0 || ix >= cols || iy < 0 || iy >= rows) return;
@@ -1925,13 +2806,22 @@ function drawEyes() {
     ctx.fillStyle = color;
     if (glow) {
       ctx.shadowColor = color;
-      ctx.shadowBlur = cellSize * 0.28;
+      ctx.shadowBlur = cellSize * 0.34;
     }
     const px = offsetX + ix * cellSize + gap / 2;
     const py = offsetY + iy * cellSize + gap / 2;
     ctx.beginPath();
     ctx.roundRect(px, py, pixelSize, pixelSize, radius);
     ctx.fill();
+
+    if (glow && specular && pixelSize >= 6) {
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+      const inset = Math.max(1.5, pixelSize * 0.22);
+      ctx.beginPath();
+      ctx.roundRect(px + inset, py + inset, pixelSize - inset * 2, (pixelSize - inset * 2) * 0.55, radius * 0.5);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
@@ -1939,9 +2829,13 @@ function drawEyes() {
   const socketShiftX = (Math.abs(curLookX) >= 2 || (isMovingSocketMood && curLookX !== 0)) ? Math.sign(curLookX) : 0;
   const socketShiftY = (Math.abs(curLookY) >= 2 || (isMovingSocketMood && curLookY !== 0)) ? Math.sign(curLookY) : 0;
 
-  const giggleBobY = (currentMood === 'joy' && giggleTick % 2 === 1) ? -1 : 0;
-  const giggleSwayX = currentMood === 'joy'
+  const giggleBobY = ((currentMood === 'joy' || currentMood === 'vibing') && giggleTick % 2 === 1) ? -1 : 0;
+  const giggleSwayX = (currentMood === 'joy' || currentMood === 'vibing')
     ? ((giggleTick % 4 === 1) ? -1 : ((giggleTick % 4 === 3) ? 1 : 0))
+    : 0;
+
+  const activeBreathY = (bouncePhase === 'none' && !clockModeActive && ['normal', 'happy', 'sleeping'].includes(currentMood))
+    ? breathOffsetY
     : 0;
 
   if (curEyeOffsetY > -21) {
@@ -1975,7 +2869,9 @@ function drawEyes() {
         if (dy < topClip || dy > botClip) continue;
 
         const normY = r / 13;
-        const shadeFactor = 0.55 + normY * 0.87;
+        // Subtle upper-eyelid ambient occlusion shadow for 3D socket depth
+        const isUpperLidShadow = (dy === topClip && topClip > -7);
+        const shadeFactor = isUpperLidShadow ? 0.48 : (0.56 + normY * 0.88);
         const shadedIris = shadeColor(idleConfig.eyeColor, shadeFactor);
 
         for (let c = 0; c < 13; c++) {
@@ -1997,11 +2893,11 @@ function drawEyes() {
           const isSmallHighlight = (pdx === 2 && pdy === 2);
 
           if (isBigHighlight || isSmallHighlight) {
-            lightLED(gx, gy, '#ffffff', true);
+            lightLED(gx, gy, '#ffffff', true, false);
           } else if (inPupil) {
-            lightLED(gx, gy, idleConfig.pupilColor, false);
+            lightLED(gx, gy, idleConfig.pupilColor, false, false);
           } else {
-            lightLED(gx, gy, shadedIris, true);
+            lightLED(gx, gy, shadedIris, true, true);
           }
         }
       }
@@ -2032,21 +2928,32 @@ function drawEyes() {
           const isSparkle = (dx === -2 && dy === -2);
 
           if (isSparkle) {
-            lightLED(gx, gy, '#ffffff', true);
+            lightLED(gx, gy, '#ffffff', true, false);
           } else if (inTinyPupil) {
-            lightLED(gx, gy, idleConfig.pupilColor, false);
+            lightLED(gx, gy, idleConfig.pupilColor, false, false);
           } else {
             lightLED(gx, gy, shadedIris, true);
           }
         }
       }
+
+      // Animated blue sweatdrop on right temple
+      if (isRightEye && !clockModeActive) {
+        const dropOffset = zzzTick % 3;
+        const sx = 42;
+        const sy = 4 + dropOffset;
+        lightLED(sx, sy, '#38bdf8', true, false);
+        lightLED(sx, sy + 1, '#7dd3fc', true, false);
+        lightLED(sx - 1, sy + 2, '#38bdf8', true, false);
+        lightLED(sx, sy + 2, '#e0f2fe', true, false);
+      }
     }
 
     function renderEye(baseCx, baseCy, isRightEye) {
       const scx = baseCx + socketShiftX;
-      const scy = baseCy + socketShiftY + curEyeOffsetY;
+      const scy = baseCy + socketShiftY + curEyeOffsetY + activeBreathY;
 
-      /* ── SQUASH & STRETCH PHYSICS RENDERING (During Entire Bounce) ── */
+      /* ── SQUASH & STRETCH PHYSICS RENDERING ── */
       if (isDeformed) {
         const rx = 6.2 * eyeScaleX;
         const ry = 6.6 * eyeScaleY;
@@ -2080,9 +2987,9 @@ function drawEyes() {
             const isHighlight = (Math.abs(gx - h1x) <= 0.6 && Math.abs(gy - h1y) <= 0.6);
 
             if (isHighlight) {
-              lightLED(gx, gy, '#ffffff', true);
+              lightLED(gx, gy, '#ffffff', true, false);
             } else if (inPupil) {
-              lightLED(gx, gy, idleConfig.pupilColor, false);
+              lightLED(gx, gy, idleConfig.pupilColor, false, false);
             } else {
               lightLED(gx, gy, shadedIris, true);
             }
@@ -2091,17 +2998,17 @@ function drawEyes() {
         return;
       }
 
-      function renderHappyArcEye() {
+      function renderHappyArcEye(extraX = 0, extraY = 0) {
         const archColor = shadeColor(idleConfig.eyeColor, 1.35);
         for (let r = 0; r < HAPPY_ARCH.length; r++) {
           for (let c = 0; c < HAPPY_ARCH[r].length; c++) {
             if (HAPPY_ARCH[r][c] === '1') {
-              lightLED(baseCx - 6 + c, baseCy + curEyeOffsetY - 3 + r, archColor, true);
+              lightLED(baseCx - 6 + c + extraX, baseCy + curEyeOffsetY + activeBreathY - 3 + r + extraY, archColor, true);
             }
           }
         }
-        const blushX = isRightEye ? (baseCx + 3) : (baseCx - 6);
-        const blushY = baseCy + curEyeOffsetY + 4;
+        const blushX = (isRightEye ? (baseCx + 3) : (baseCx - 6)) + extraX;
+        const blushY = baseCy + curEyeOffsetY + activeBreathY + 4 + extraY;
         for (let by = 0; by < 2; by++) {
           for (let bx = 0; bx < 4; bx++) {
             lightLED(blushX + bx, blushY + by, '#f4729b', true);
@@ -2109,13 +3016,32 @@ function drawEyes() {
         }
       }
 
-      /* ── 1. HAPPY (^ ^ + pink blush, NO pupils) ── */
+      /* ── 1. HAPPY ── */
       if (currentMood === 'happy') {
         renderHappyArcEye();
         return;
       }
 
-      /* ── 2. GIGGLING / JOY DOME (Bouncing dome + dancing pupil + rosy blush) ── */
+      /* ── 1b. VIBING (^ω^ + Floating Pixel Music Notes) ── */
+      if (currentMood === 'vibing') {
+        renderHappyArcEye(giggleSwayX, giggleBobY);
+        if (isRightEye && !clockModeActive) {
+          const noteFloat = fxTick % 4;
+          const noteCol1 = shadeColor(idleConfig.eyeColor, 1.3);
+          const noteCol2 = '#f472b6';
+          for (let nr = 0; nr < 5; nr++) {
+            for (let nc = 0; nc < 5; nc++) {
+              if (MUSIC_NOTE_GLYPH[nr][nc] === '1') {
+                lightLED(40 + nc, 5 + nr - noteFloat, noteCol1, true);
+                lightLED(1 + nc, 7 + nr - ((noteFloat + 2) % 4), noteCol2, true);
+              }
+            }
+          }
+        }
+        return;
+      }
+
+      /* ── 2. GIGGLING / JOY DOME ── */
       if (currentMood === 'joy') {
         const ex = baseCx + giggleSwayX;
         const ey = Math.round(baseCy + curEyeOffsetY) + giggleBobY;
@@ -2138,16 +3064,15 @@ function drawEyes() {
             const isHighlight = inDomeBody && (pdx === -2 || pdx === -1) && (pdy === -2 || pdy === -1);
 
             if (isHighlight) {
-              lightLED(gx, gy, '#ffffff', true);
+              lightLED(gx, gy, '#ffffff', true, false);
             } else if (inPupil) {
-              lightLED(gx, gy, idleConfig.pupilColor, false);
+              lightLED(gx, gy, idleConfig.pupilColor, false, false);
             } else {
               lightLED(gx, gy, col, true);
             }
           }
         }
 
-        // Cute pulsing rosy blush under the outer cheek lid
         const blushX = isRightEye ? (ex + 3) : (ex - 5);
         const blushY = ey + 3;
         const blushCol = (giggleTick % 2 === 1) ? '#ff6ea1' : '#d94c7a';
@@ -2157,7 +3082,7 @@ function drawEyes() {
         return;
       }
 
-      /* ── 3. SUSPICIOUS (Thin 3-row horizontal slits with wide pupil & 1px glint) ── */
+      /* ── 3. SUSPICIOUS ── */
       if (currentMood === 'suspicious') {
         const ey = Math.round(baseCy + curEyeOffsetY);
         const pcx = Math.round(baseCx + curLookX);
@@ -2171,9 +3096,9 @@ function drawEyes() {
             const isGlint = (pdx === -2 && dy === 0);
 
             if (isGlint) {
-              lightLED(gx, gy, '#ffffff', true);
+              lightLED(gx, gy, '#ffffff', true, false);
             } else if (inPupil) {
-              lightLED(gx, gy, idleConfig.pupilColor, false);
+              lightLED(gx, gy, idleConfig.pupilColor, false, false);
             } else {
               lightLED(gx, gy, col, true);
             }
@@ -2182,7 +3107,7 @@ function drawEyes() {
         return;
       }
 
-      /* ── 4. ANGRY (Inward-slanted brow WITH moving left/right pupils + socket shift + anger mark) ── */
+      /* ── 4. ANGRY ── */
       if (currentMood === 'angry') {
         const ex = Math.round(baseCx + socketShiftX);
         const ey = Math.round(baseCy + socketShiftY + curEyeOffsetY);
@@ -2207,9 +3132,9 @@ function drawEyes() {
             const isGlint = (pdx === -1 && pdy === -1);
 
             if (isGlint) {
-              lightLED(gx, gy, '#ffffff', true);
+              lightLED(gx, gy, '#ffffff', true, false);
             } else if (inPupil) {
-              lightLED(gx, gy, idleConfig.pupilColor, false);
+              lightLED(gx, gy, idleConfig.pupilColor, false, false);
             } else {
               lightLED(gx, gy, col, true);
             }
@@ -2228,7 +3153,7 @@ function drawEyes() {
         return;
       }
 
-      /* ── 5. WINK (Self-contained: one arch + one guaranteed wide-open eye) ── */
+      /* ── 5. WINK ── */
       if (currentMood === 'wink') {
         const isClosedEye = (isRightEye && winkEyeSide === 'right') || (!isRightEye && winkEyeSide === 'left');
         if (isClosedEye) {
@@ -2248,14 +3173,14 @@ function drawEyes() {
         return;
       }
 
-      /* ── 6. SLEEPING (Peaceful curved closed lids + floating Zzz, NO pupils) ── */
+      /* ── 6. SLEEPING ── */
       if (currentMood === 'sleeping') {
         const sleepColor = shadeColor(idleConfig.eyeColor, 0.95);
         const sleepLid = [
           [-5, 1], [-4, 2], [-3, 2], [-2, 3], [-1, 3], [0, 3], [1, 3], [2, 3], [3, 2], [4, 2], [5, 1],
           [-4, 1], [4, 1]
         ];
-        sleepLid.forEach(([dx, dy]) => lightLED(baseCx + dx, baseCy + curEyeOffsetY + dy, sleepColor, true));
+        sleepLid.forEach(([dx, dy]) => lightLED(baseCx + dx, baseCy + curEyeOffsetY + activeBreathY + dy, sleepColor, true));
 
         if (isRightEye) {
           const floatOffset = Math.floor(zzzTick % 3);
@@ -2279,13 +3204,13 @@ function drawEyes() {
         return;
       }
 
-      /* ── 7. SHOCKED (Wide O_O eyes + tiny contracted pupils + subtle 1px tremor) ── */
+      /* ── 7. SHOCKED ── */
       if (currentMood === 'shocked') {
         renderShockedEye(baseCx, baseCy, isRightEye, true);
         return;
       }
 
-      /* ── 7b. HEART EYES 😍 (Pulsing pink/red heart eyes + rosy blush) ── */
+      /* ── 7b. HEART EYES 😍 ── */
       if (currentMood === 'hearteyes') {
         const pulse = (loveTick % 2 === 1);
         const bobY = pulse ? -1 : 0;
@@ -2302,7 +3227,7 @@ function drawEyes() {
             const gy = ey - 6 + r;
             const isShine = (c === 3 && r === 2) || (c === 2 && r === 3) || (c === 3 && r === 3);
             if (isShine) {
-              lightLED(gx, gy, '#ffffff', true);
+              lightLED(gx, gy, '#ffffff', true, false);
             } else if (r >= 8) {
               lightLED(gx, gy, '#e11d48', true);
             } else {
@@ -2316,10 +3241,20 @@ function drawEyes() {
         for (let bx = 0; bx < 4; bx++) {
           lightLED(blushX + bx, blushY, '#f4729b', true);
         }
+
+        // Ambient floating mini pixel hearts
+        if (isRightEye && !clockModeActive) {
+          const floatUp = loveTick % 3;
+          const miniHeart = [[0,0],[2,0],[0,1],[1,1],[2,1],[1,2]];
+          miniHeart.forEach(([hx, hy]) => {
+            lightLED(41 + hx, 4 + hy - floatUp, '#ff4d8d', true, false);
+            lightLED(2 + hx, 5 + hy - ((floatUp + 1) % 3), '#ff75a8', true, false);
+          });
+        }
         return;
       }
 
-      /* ── 7c. BLOWING A KISS 😘 (One squeezed wink eye + one affectionate open eye) ── */
+      /* ── 7c. BLOWING A KISS 😘 ── */
       if (currentMood === 'kiss') {
         const isWinkingEye = (isRightEye && winkEyeSide === 'right') || (!isRightEye && winkEyeSide === 'left');
         if (isWinkingEye) {
@@ -2345,6 +3280,170 @@ function drawEyes() {
         const blushY = Math.round(baseCy + curEyeOffsetY) + 4;
         for (let bx = 0; bx < 4; bx++) {
           lightLED(blushX + bx, blushY, '#f4729b', true);
+        }
+        return;
+      }
+
+      /* ── 7d. STARSTRUCK 🤩 (Shimmering Star Eyes) ── */
+      if (currentMood === 'starstruck') {
+        const shimmer = (fxTick % 2 === 1);
+        const ex = baseCx;
+        const ey = Math.round(baseCy + curEyeOffsetY) + (shimmer ? -1 : 0);
+        const starMain = shimmer ? '#fde047' : '#facc15';
+        const starTip  = shadeColor(idleConfig.eyeColor, 1.25);
+
+        for (let r = 0; r < STAR_EYE_MASK.length; r++) {
+          for (let c = 0; c < STAR_EYE_MASK[r].length; c++) {
+            if (STAR_EYE_MASK[r][c] !== '1') continue;
+            const gx = ex - 6 + c;
+            const gy = ey - 6 + r;
+            const isCenter = Math.abs(c - 6) <= 1 && Math.abs(r - 5) <= 1;
+            const isOuterTip = (r === 0 || r === 11 || c === 0 || c === 12);
+            if (isCenter) {
+              lightLED(gx, gy, '#ffffff', true, false);
+            } else if (isOuterTip && shimmer) {
+              lightLED(gx, gy, starTip, true);
+            } else {
+              lightLED(gx, gy, starMain, true);
+            }
+          }
+        }
+        // Corner sparkles
+        if (shimmer) {
+          lightLED(ex - 7, ey - 4, '#ffffff', true, false);
+          lightLED(ex + 7, ey + 3, '#fde047', true, false);
+        } else {
+          lightLED(ex + 7, ey - 4, '#ffffff', true, false);
+          lightLED(ex - 7, ey + 3, '#fde047', true, false);
+        }
+        return;
+      }
+
+      /* ── 7e. COOL SHADES 😎 (Drop-Down Pixel Sunglasses + Glint Sweep) ── */
+      if (currentMood === 'cool') {
+        // Render subtle normal eye behind while shades drop down
+        if (coolDropProgress < 0.85) {
+          renderNormalOpenEye(scx, scy);
+        }
+        const dropY = Math.round(-12 + coolDropProgress * 12);
+        const ey = Math.round(baseCy + curEyeOffsetY) + dropY;
+        const frameCol = shadeColor(idleConfig.eyeColor, 1.3);
+        const lensCol  = '#0f172a';
+        const glintCol = '#ffffff';
+        const glintPos = (fxTick % 8) - 2; // sweeps across lens
+
+        // Lens frame (13x7 centered at baseCx)
+        for (let r = -3; r <= 3; r++) {
+          for (let c = -6; c <= 6; c++) {
+            // Taper bottom corners slightly for sleek shades silhouette
+            if (r === 3 && Math.abs(c) >= 5) continue;
+            const gx = baseCx + c;
+            const gy = ey + r;
+            const isBorder = (r === -3 || r === 3 || Math.abs(c) === 6 || (r === 2 && Math.abs(c) === 5));
+            const isGlint = !isBorder && ((c + r) === glintPos || (c + r) === glintPos + 1);
+            if (isBorder) {
+              lightLED(gx, gy, frameCol, true);
+            } else if (isGlint) {
+              lightLED(gx, gy, glintCol, true, false);
+            } else {
+              lightLED(gx, gy, lensCol, false, false);
+            }
+          }
+        }
+        // Nose bridge & temple arms
+        if (!isRightEye) {
+          for (let bx = 19; bx <= 26; bx++) {
+            lightLED(bx, ey - 2, frameCol, true);
+          }
+          lightLED(4, ey - 2, frameCol, true);
+          lightLED(5, ey - 2, frameCol, true);
+        } else {
+          lightLED(40, ey - 2, frameCol, true);
+          lightLED(41, ey - 2, frameCol, true);
+        }
+        return;
+      }
+
+      /* ── 7f. DIZZY SPIRALS 😵‍💫 ── */
+      if (currentMood === 'dizzy') {
+        const frame = DIZZY_SPIRALS[fxTick % DIZZY_SPIRALS.length];
+        const spiralCol = shadeColor(idleConfig.eyeColor, 1.25);
+        const coreCol   = '#f472b6';
+        for (let r = 0; r < 11; r++) {
+          for (let c = 0; c < 11; c++) {
+            if (frame[r][c] === '1') {
+              const isInner = (r >= 4 && r <= 6 && c >= 4 && c <= 6);
+              lightLED(baseCx - 5 + c, Math.round(baseCy + curEyeOffsetY) - 5 + r, isInner ? coreCol : spiralCol, true);
+            }
+          }
+        }
+        // Orbiting dizzy stars at top
+        if (isRightEye && !clockModeActive) {
+          const orbit = fxTick % 4;
+          const starPositions = [
+            [18 + orbit * 2, 2],
+            [27 - orbit * 2, 3]
+          ];
+          starPositions.forEach(([sx, sy]) => {
+            lightLED(sx, sy, '#fde047', true, false);
+            lightLED(sx + 1, sy, '#ffffff', true, false);
+          });
+        }
+        return;
+      }
+
+      /* ── 7g. CRYING WATERFALLS 😭 ── */
+      if (currentMood === 'cry') {
+        const eyeCol = shadeColor(idleConfig.eyeColor, 1.3);
+        const tearCol1 = '#38bdf8';
+        const tearCol2 = '#bae6fd';
+        const ey = Math.round(baseCy + curEyeOffsetY);
+
+        // Bold 'T' closed crying eye
+        for (let dx = -5; dx <= 5; dx++) {
+          lightLED(baseCx + dx, ey - 2, eyeCol, true);
+          lightLED(baseCx + dx, ey - 1, eyeCol, true);
+        }
+        for (let dy = 0; dy <= 3; dy++) {
+          lightLED(baseCx - 1, ey + dy, eyeCol, true);
+          lightLED(baseCx, ey + dy, eyeCol, true);
+        }
+
+        // Animated streaming pixel tears cascading down to bottom of matrix
+        for (let ty = ey + 1; ty <= 20; ty++) {
+          const phase = (ty + fxTick) % 3;
+          lightLED(baseCx - 3, ty, phase === 0 ? tearCol2 : tearCol1, true, false);
+          lightLED(baseCx + 2, ty, phase === 1 ? tearCol2 : tearCol1, true, false);
+          if (ty >= 19) {
+            lightLED(baseCx - 4, 20, tearCol2, true, false);
+            lightLED(baseCx + 3, 20, tearCol2, true, false);
+          }
+        }
+        return;
+      }
+
+      /* ── 7h. MATRIX GLITCH 👾 ── */
+      if (currentMood === 'glitch') {
+        const glitchShift = (fxTick % 3 === 0) ? -2 : ((fxTick % 3 === 1) ? 2 : 0);
+        // Chromatic aberration ghost pixels
+        for (let r = 0; r < 14; r++) {
+          const rowShift = (r >= 4 && r <= 8) ? glitchShift : -Math.sign(glitchShift);
+          for (let c = 0; c < 13; c++) {
+            if (SOCKET_MASK[r][c] !== '1') continue;
+            const gx = baseCx - 6 + c + rowShift;
+            const gy = Math.round(baseCy + curEyeOffsetY) - 7 + r;
+            if (c === 0 || c === 1) {
+              lightLED(gx - 1, gy, '#ff2a6d', true, false);
+            } else if (c === 11 || c === 12) {
+              lightLED(gx + 1, gy, '#00f5d4', true, false);
+            }
+            const inPupil = (r >= 4 && r <= 9 && c >= 4 && c <= 8);
+            if (inPupil) {
+              lightLED(gx, gy, idleConfig.pupilColor, false, false);
+            } else {
+              lightLED(gx, gy, shadeColor(idleConfig.eyeColor, 1.15), true);
+            }
+          }
         }
         return;
       }
@@ -2384,7 +3483,7 @@ function drawEyes() {
     renderEye(12, 11, false);
     renderEye(33, 11, true);
 
-    /* ── CUTE PIXEL MOUTH (Matches each eye expression) ── */
+    /* ── CUTE PIXEL MOUTH ── */
     if (idleConfig.showMouth !== false) {
       const isNormalMouth = !isDeformed && currentMood === 'normal';
       const isSleepyMouth = !isDeformed && currentMood === 'sleepy';
@@ -2395,7 +3494,7 @@ function drawEyes() {
       const mouthShiftY = isNormalMouth ? Math.sign(curLookY) : 0;
       const kissShiftX = (!isDeformed && currentMood === 'kiss') ? (winkEyeSide === 'right' ? 1 : -1) : 0;
       const mx = 20 + mouthShiftX + kissShiftX;
-      const my = Math.round(16 + curEyeOffsetY) + mouthShiftY;
+      const my = Math.round(16 + curEyeOffsetY + activeBreathY) + mouthShiftY;
       const mouthColor = shadeColor(idleConfig.eyeColor, 1.3);
 
       if (currentMood === 'bubblegum') {
@@ -2431,7 +3530,7 @@ function drawEyes() {
             }
           }
         }
-      } else if (!isDeformed && currentMood === 'joy') {
+      } else if (!isDeformed && (currentMood === 'joy' || currentMood === 'vibing')) {
         const frame = JOY_GIGGLE_FRAMES[giggleTick % JOY_GIGGLE_FRAMES.length];
         const jmx = 20 + giggleSwayX;
         const jmy = Math.round(16 + curEyeOffsetY) + giggleBobY;
@@ -2455,7 +3554,6 @@ function drawEyes() {
           }
         }
       } else if (isNormalMouth) {
-        // Subtle cute idle cycle exclusively for the normal U-smile mouth
         const step = mouthTick % 10;
         const frameIdx = (step === 3 || step === 7) ? 1 : (step === 8 ? 2 : 0);
         const mask = NORMAL_MOUTH_FRAMES[frameIdx];
@@ -2500,7 +3598,8 @@ function drawEyes() {
 
         if (activeMouthKey) {
           const mask = MOUTH_MASKS[activeMouthKey];
-          const flipHoriz = (activeMouthKey === 'kiss' && winkEyeSide === 'left');
+          const flipHoriz = (activeMouthKey === 'kiss' && winkEyeSide === 'left') ||
+                            ((activeMouthKey === 'dizzy' || activeMouthKey === 'cry') && fxTick % 2 === 1);
           for (let r = 0; r < mask.length; r++) {
             for (let c = 0; c < mask[r].length; c++) {
               const srcC = flipHoriz ? (mask[r].length - 1 - c) : c;
@@ -2540,7 +3639,7 @@ function drawEyes() {
             );
 
             if (isSpec) {
-              lightLED(gx, gy, '#ffffff', true);
+              lightLED(gx, gy, '#ffffff', true, false);
             } else if (d2 > innerR2 && (nx + ny > 0.2)) {
               lightLED(gx, gy, '#d9387a', true);
             } else if (nx < -0.15 && ny < -0.15) {
@@ -2598,7 +3697,7 @@ function drawEyes() {
           const gy = hy - 3 + r;
           const isShine = (c === 2 && r === 1);
           if (isShine) {
-            lightLED(gx, gy, '#ffffff', true);
+            lightLED(gx, gy, '#ffffff', true, false);
           } else {
             lightLED(gx, gy, kissProgress > 0.65 ? '#ff75a8' : '#ff2a6d', true);
           }
@@ -2607,14 +3706,14 @@ function drawEyes() {
     }
   }
 
-  /* ── 10. RISING PIXEL DIGITAL CLOCK (Large Primary + Centered Compact Secondary Below) ── */
+  /* ── 10. RISING PIXEL DIGITAL CLOCK ── */
   if (curClockY < rows) {
     const now = new Date();
     const rawH = now.getHours();
-    const h12 = rawH % 12 || 12;
-    const hStr = String(h12).padStart(2, '0');
+    const hDisplay = clockConfig.use24h ? rawH : (rawH % 12 || 12);
+    const hStr = String(hDisplay).padStart(2, '0');
     const mStr = String(now.getMinutes()).padStart(2, '0');
-    const ampm = rawH >= 12 ? 'PM' : 'AM';
+    const ampm = clockConfig.use24h ? '24' : (rawH >= 12 ? 'PM' : 'AM');
     const colonOn = (now.getSeconds() % 2 === 0);
 
     const primaryY = secVisible ? (curClockY - 3) : curClockY;
@@ -2647,40 +3746,42 @@ function drawEyes() {
     drawClockDigit(mStr[0], 22, primaryY);
     drawClockDigit(mStr[1], 29, primaryY);
 
-    const ampmColor = shadeColor(idleConfig.eyeColor, 0.85);
-    [ampm[0], ampm[1]].forEach((ltr, idx) => {
-      const mGlyph = MINI_GLYPHS[ltr];
-      if (!mGlyph) return;
-      const sx = 37 + idx * 4;
-      const sy = primaryY + 4;
-      for (let r = 0; r < 5; r++) {
-        for (let c = 0; c < 3; c++) {
-          if (mGlyph[r][c] === '1') {
-            lightLED(sx + c, sy + r, ampmColor, true);
+    if (!clockConfig.use24h) {
+      const ampmColor = shadeColor(idleConfig.eyeColor, 0.85);
+      [ampm[0], ampm[1]].forEach((ltr, idx) => {
+        const mGlyph = MINI_GLYPHS[ltr];
+        if (!mGlyph) return;
+        const sx = 37 + idx * 4;
+        const sy = primaryY + 4;
+        for (let r = 0; r < 5; r++) {
+          for (let c = 0; c < 3; c++) {
+            if (mGlyph[r][c] === '1') {
+              lightLED(sx + c, sy + r, ampmColor, true);
+            }
           }
         }
-      }
-    });
+      });
+    }
 
-    // Centered Secondary Clock Row Directly Below Primary Clock (if visible)
     if (secVisible) {
       try {
         const secParts = new Intl.DateTimeFormat('en-US', {
           timeZone: secTimezone,
           hour: '2-digit',
           minute: '2-digit',
-          hour12: true
+          hour12: !clockConfig.use24h
         }).formatToParts(now);
 
         const sHour = (secParts.find(p => p.type === 'hour')?.value || '12').padStart(2, '0');
         const sMin  = (secParts.find(p => p.type === 'minute')?.value || '00').padStart(2, '0');
-        const sAmPm = (secParts.find(p => p.type === 'dayPeriod')?.value || 'AM').toUpperCase();
+        const sAmPm = clockConfig.use24h ? '' : (secParts.find(p => p.type === 'dayPeriod')?.value || 'AM').toUpperCase();
 
         const rawCity = secCityLabel.split('·')[0].trim().replace(/[^A-Z]/gi, '').toUpperCase();
         const cityTag = rawCity.slice(0, 4) || '2ND';
 
         const cityWidth = cityTag.length * 4 - 1;
-        const totalWidth = cityWidth + 2 + 7 + 3 + 7 + 1 + 7;
+        const ampmWidth = sAmPm ? 8 : 0;
+        const totalWidth = cityWidth + 2 + 7 + 3 + 7 + ampmWidth;
         const startX = Math.floor((cols - totalWidth) / 2);
 
         const secY = primaryY + 11;
@@ -2700,7 +3801,6 @@ function drawEyes() {
         }
 
         let cursorX = startX;
-
         for (let i = 0; i < cityTag.length; i++) {
           drawMiniGlyph(cityTag[i], cursorX, secY, labelCol, false);
           cursorX += 4;
@@ -2723,9 +3823,11 @@ function drawEyes() {
         drawMiniGlyph(sMin[1], cursorX, secY, timeCol, true);
         cursorX += 4;
 
-        drawMiniGlyph(sAmPm[0], cursorX, secY, labelCol, false);
-        cursorX += 4;
-        drawMiniGlyph(sAmPm[1], cursorX, secY, labelCol, false);
+        if (sAmPm) {
+          drawMiniGlyph(sAmPm[0], cursorX, secY, labelCol, false);
+          cursorX += 4;
+          drawMiniGlyph(sAmPm[1], cursorX, secY, labelCol, false);
+        }
       } catch (e) {}
     }
   }
@@ -2808,20 +3910,22 @@ function animationLoop(timestamp) {
         currentMood = 'happy';
         drawEyes();
         clearTimeout(behaviorTimer);
-        clockSequenceTimers.push(setTimeout(() => {
-          if (!isIdleActive) return;
-          currentMood = 'normal';
-          curBlink = 0;
-          tgtBlink = 0;
-          drawEyes();
-          behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2000);
-          schedulePeriodicPixelClock();
-        }, 1600));
+        if (!labModeActive) {
+          clockSequenceTimers.push(setTimeout(() => {
+            if (!isIdleActive) return;
+            currentMood = 'normal';
+            curBlink = 0;
+            tgtBlink = 0;
+            drawEyes();
+            behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2000);
+            schedulePeriodicPixelClock();
+          }, 1600));
+        }
       }
     }
   }
 
-  /* ── 2. Blink Stepper (Slow heavy droop for sleepy, snappy for normal) ── */
+  /* ── 2. Blink Stepper ── */
   const blinkInterval = currentMood === 'sleepy' ? 75 : 22;
   if (timestamp - lastBlinkStepTime >= blinkInterval) {
     lastBlinkStepTime = timestamp;
@@ -2870,6 +3974,15 @@ function animationLoop(timestamp) {
     }
   }
 
+  /* Subtle ambient breathing float every 2.2s */
+  if (timestamp - lastBreathTime >= 2200) {
+    lastBreathTime = timestamp;
+    breathOffsetY = breathOffsetY === 0 ? 1 : 0;
+    if (['normal', 'happy', 'sleeping'].includes(currentMood) && bouncePhase === 'none' && !clockModeActive) {
+      needsDraw = true;
+    }
+  }
+
   const animatedMoods = ['sleeping', 'shocked', 'angry'];
   if (animatedMoods.includes(currentMood) && curEyeOffsetY > -21 && timestamp - lastZzzTime >= 420) {
     lastZzzTime = timestamp;
@@ -2877,7 +3990,7 @@ function animationLoop(timestamp) {
     needsDraw = true;
   }
 
-  if (currentMood === 'joy' && bouncePhase === 'none' && curEyeOffsetY > -21 && timestamp - lastGiggleTime >= 165) {
+  if ((currentMood === 'joy' || currentMood === 'vibing') && bouncePhase === 'none' && curEyeOffsetY > -21 && timestamp - lastGiggleTime >= 165) {
     lastGiggleTime = timestamp;
     giggleTick++;
     needsDraw = true;
@@ -2897,6 +4010,18 @@ function animationLoop(timestamp) {
 
   if (currentMood === 'kiss' && bouncePhase === 'none' && curEyeOffsetY > -21) {
     kissProgress = (kissProgress + dt * 0.58) % 1.0;
+    needsDraw = true;
+  }
+
+  if (currentMood === 'cool' && bouncePhase === 'none' && coolDropProgress < 1) {
+    coolDropProgress = Math.min(1, coolDropProgress + dt * 3.4);
+    needsDraw = true;
+  }
+
+  const fxMoods = ['starstruck', 'cool', 'dizzy', 'cry', 'glitch', 'vibing'];
+  if (fxMoods.includes(currentMood) && bouncePhase === 'none' && curEyeOffsetY > -21 && timestamp - lastFxTime >= 160) {
+    lastFxTime = timestamp;
+    fxTick++;
     needsDraw = true;
   }
 
@@ -2962,15 +4087,17 @@ function animationLoop(timestamp) {
         tgtLookY = 0;
         needsDraw = true;
 
-        clearTimeout(behaviorTimer);
-        behaviorTimer = setTimeout(() => {
-          if (!isIdleActive) return;
-          currentMood = 'normal';
-          curBlink = 0;
-          tgtBlink = 0;
-          drawEyes();
-          behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
-        }, 1400);
+        if (!labModeActive) {
+          clearTimeout(behaviorTimer);
+          behaviorTimer = setTimeout(() => {
+            if (!isIdleActive) return;
+            currentMood = 'normal';
+            curBlink = 0;
+            tgtBlink = 0;
+            drawEyes();
+            behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
+          }, 1400);
+        }
       }
     }
   }
@@ -2979,7 +4106,11 @@ function animationLoop(timestamp) {
 }
 
 /* ── Natural Eye & Expressive Behavior Scheduler ── */
-const NON_BLINK_MOODS = ['happy', 'joy', 'angry', 'wink', 'sleeping', 'shocked', 'sleepy', 'bubblegum', 'hearteyes', 'kiss'];
+const NON_BLINK_MOODS = [
+  'happy', 'joy', 'vibing', 'angry', 'wink', 'sleeping',
+  'shocked', 'sleepy', 'bubblegum', 'hearteyes', 'kiss',
+  'starstruck', 'cool', 'dizzy', 'cry', 'glitch'
+];
 
 function triggerBlink(doubleBlink = false) {
   if (!isIdleActive || NON_BLINK_MOODS.includes(currentMood) || clockModeActive || bouncePhase !== 'none') return;
@@ -3004,7 +4135,7 @@ function triggerBlink(doubleBlink = false) {
 }
 
 /* ── Pixel Clock Takeover Sequence ── */
-function startPixelClockSequence() {
+function startPixelClockSequence(fromLab = false) {
   clearClockSequenceTimers();
   clearFightSleepTimers();
   clearBlinkTimers();
@@ -3038,7 +4169,7 @@ function startPixelClockSequence() {
     drawEyes();
   }, 550));
 
-  const clockDisplayDurationMs = 12000;
+  const clockDisplayDurationMs = fromLab ? 5500 : 12000;
   clockSequenceTimers.push(setTimeout(() => {
     if (!isIdleActive || !clockModeActive) return;
     curClockY = 23;
@@ -3196,12 +4327,156 @@ function startFightSleepSequence() {
     tgtEyeOffsetY = 0;
     drawEyes();
     triggerBlink(true);
-    behaviorTimer = setTimeout(scheduleNextBehavior, 2000 + Math.random() * 1800);
+    if (!labModeActive) {
+      behaviorTimer = setTimeout(scheduleNextBehavior, 2000 + Math.random() * 1800);
+    }
   }, 5100));
 }
 
+/* ── Activate Specific Mood (Used by Both Scheduler & Expression Lab) ── */
+function activateSpecificMood(chosenMood, stayLockedInLab = false) {
+  currentMood = chosenMood;
+  curBlink = 0;
+  tgtBlink = 0;
+  sleepyYawnStage = 'idle';
+  resetBubbleGumState();
+  clearBlinkTimers();
+  clearMoodGlanceTimers();
+  clearFightSleepTimers();
+
+  if (chosenMood === 'wink') {
+    winkEyeSide = Math.random() < 0.5 ? 'right' : 'left';
+    tgtLookX = winkEyeSide === 'right' ? 1 : -1;
+    tgtLookY = -1;
+  } else if (chosenMood === 'bored') {
+    runBoredSequence(moodGlanceTimers);
+  } else if (chosenMood === 'bubblegum') {
+    runBubbleGumSequence();
+    return;
+  } else if (chosenMood === 'suspicious') {
+    const firstDir = Math.random() < 0.5 ? -2 : 2;
+    tgtLookX = firstDir;
+    tgtLookY = 0;
+    moodGlanceTimers.push(setTimeout(() => {
+      if (!isIdleActive || currentMood !== 'suspicious') return;
+      tgtLookX = -firstDir;
+    }, 1500));
+  } else if (chosenMood === 'angry') {
+    const firstDir = Math.random() < 0.5 ? -2 : 2;
+    tgtLookX = firstDir;
+    tgtLookY = 0;
+    moodGlanceTimers.push(setTimeout(() => {
+      if (!isIdleActive || currentMood !== 'angry') return;
+      tgtLookX = -firstDir;
+    }, 950));
+    moodGlanceTimers.push(setTimeout(() => {
+      if (!isIdleActive || currentMood !== 'angry') return;
+      tgtLookX = firstDir;
+    }, 1950));
+  } else if (chosenMood === 'sleepy') {
+    runSleepySequence(moodGlanceTimers);
+  } else if (chosenMood === 'hearteyes') {
+    loveTick = 0;
+    lastLoveTime = performance.now();
+    tgtLookX = 0; tgtLookY = 0;
+    curLookX = 0; curLookY = 0;
+    drawEyes();
+
+    // Sequence: 😍 hearteyes (2.4s) -> normal eyes (1.4s) -> 😘 kiss (2.8s) -> normal eyes
+    behaviorTimer = setTimeout(() => {
+      if (!isIdleActive) return;
+      currentMood = 'normal';
+      curBlink = 0; tgtBlink = 0;
+      tgtLookX = 0; tgtLookY = 0;
+      drawEyes();
+      triggerBlink(false);
+
+      moodGlanceTimers.push(setTimeout(() => {
+        if (!isIdleActive || clockModeActive || bouncePhase !== 'none') return;
+        currentMood = 'kiss';
+        winkEyeSide = Math.random() < 0.5 ? 'right' : 'left';
+        kissProgress = 0;
+        curBlink = 0; tgtBlink = 0;
+        drawEyes();
+
+        if (!stayLockedInLab) {
+          behaviorTimer = setTimeout(() => {
+            if (!isIdleActive) return;
+            currentMood = 'normal';
+            kissProgress = 0;
+            curBlink = 0; tgtBlink = 0;
+            tgtLookX = 0; tgtLookY = 0;
+            drawEyes();
+            behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
+          }, 2800);
+        }
+      }, 1400));
+    }, 2400);
+    return;
+  } else if (chosenMood === 'joy' || chosenMood === 'vibing') {
+    giggleTick = 0;
+    lastGiggleTime = performance.now();
+    tgtLookX = chosenMood === 'joy' ? (Math.random() < 0.33 ? -1 : (Math.random() < 0.5 ? 1 : 0)) : 0;
+    tgtLookY = 0;
+  } else if (chosenMood === 'cool') {
+    coolDropProgress = 0;
+    fxTick = 0;
+    lastFxTime = performance.now();
+    tgtLookX = 0; tgtLookY = 0;
+    curLookX = 0; curLookY = 0;
+  } else if (['starstruck', 'dizzy', 'cry', 'glitch'].includes(chosenMood)) {
+    fxTick = 0;
+    lastFxTime = performance.now();
+    tgtLookX = 0; tgtLookY = 0;
+    curLookX = 0; curLookY = 0;
+  } else {
+    tgtLookX = 0; tgtLookY = 0;
+    curLookX = 0; curLookY = 0;
+  }
+
+  drawEyes();
+
+  if (stayLockedInLab) return;
+
+  if (chosenMood === 'sleeping') {
+    behaviorTimer = setTimeout(() => {
+      if (!isIdleActive) return;
+      startFightSleepSequence();
+    }, 4500);
+    return;
+  }
+
+  const holdDuration = chosenMood === 'wink'
+    ? 1800
+    : chosenMood === 'glitch'
+      ? 1450
+      : chosenMood === 'sleepy'
+        ? 5100
+        : chosenMood === 'bored'
+          ? 3400
+          : (chosenMood === 'joy' || chosenMood === 'vibing')
+            ? (3200 + Math.random() * 800)
+            : chosenMood === 'angry'
+              ? (3000 + Math.random() * 800)
+              : (2800 + Math.random() * 1400);
+
+  behaviorTimer = setTimeout(() => {
+    if (!isIdleActive) return;
+    currentMood = 'normal';
+    sleepyYawnStage = 'idle';
+    resetBubbleGumState();
+    curBlink = 0;
+    tgtBlink = 0;
+    tgtLookX = 0;
+    tgtLookY = 0;
+    tgtEyeOffsetY = 0;
+    drawEyes();
+    behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
+  }, holdDuration);
+}
+
 function scheduleNextBehavior() {
-  if (!isIdleActive || clockModeActive || bouncePhase !== 'none') return;
+  if (!isIdleActive || labModeActive || clockModeActive || bouncePhase !== 'none') return;
 
   const now = Date.now();
   const pointerActiveInside = idleConfig.trackMouse && (now - lastMouseInsideTime < 2500);
@@ -3247,18 +4522,24 @@ function scheduleNextBehavior() {
     return;
   }
 
-  if (idleConfig.expressive && roll >= 0.48) {
+  if (idleConfig.expressive && roll >= 0.44) {
     const weightedMoods = [
-      { mood: 'hearteyes',  weight: 11 },
-      { mood: 'happy',      weight: 10 },
-      { mood: 'wink',       weight: 10 },
-      { mood: 'joy',        weight: 10 },
-      { mood: 'suspicious', weight: 10 },
-      { mood: 'bubblegum',  weight: 9  },
-      { mood: 'bored',      weight: 8  },
-      { mood: 'angry',      weight: 6  },
-      { mood: 'sleepy',     weight: 8  },
-      { mood: 'sleeping',   weight: 6  },
+      { mood: 'hearteyes',  weight: 10 },
+      { mood: 'happy',      weight: 9  },
+      { mood: 'wink',       weight: 9  },
+      { mood: 'joy',        weight: 8  },
+      { mood: 'starstruck', weight: 7  },
+      { mood: 'cool',       weight: 7  },
+      { mood: 'vibing',     weight: 7  },
+      { mood: 'suspicious', weight: 8  },
+      { mood: 'bubblegum',  weight: 8  },
+      { mood: 'bored',      weight: 7  },
+      { mood: 'angry',      weight: 5  },
+      { mood: 'sleepy',     weight: 7  },
+      { mood: 'sleeping',   weight: 5  },
+      { mood: 'dizzy',      weight: 4  },
+      { mood: 'cry',        weight: 4  },
+      { mood: 'glitch',     weight: 3  },
       { mood: 'shocked',    weight: 2  }
     ];
 
@@ -3273,133 +4554,7 @@ function scheduleNextBehavior() {
       r -= item.weight;
     }
 
-    currentMood = chosenMood;
-    curBlink = 0;
-    tgtBlink = 0;
-    sleepyYawnStage = 'idle';
-    resetBubbleGumState();
-    clearBlinkTimers();
-    clearMoodGlanceTimers();
-    clearFightSleepTimers();
-
-    if (chosenMood === 'wink') {
-      winkEyeSide = Math.random() < 0.5 ? 'right' : 'left';
-      tgtLookX = winkEyeSide === 'right' ? 1 : -1;
-      tgtLookY = -1;
-    } else if (chosenMood === 'bored') {
-      runBoredSequence(moodGlanceTimers);
-    } else if (chosenMood === 'bubblegum') {
-      runBubbleGumSequence();
-      return;
-    } else if (chosenMood === 'suspicious') {
-      const firstDir = Math.random() < 0.5 ? -2 : 2;
-      tgtLookX = firstDir;
-      tgtLookY = 0;
-      moodGlanceTimers.push(setTimeout(() => {
-        if (!isIdleActive || currentMood !== 'suspicious') return;
-        tgtLookX = -firstDir;
-      }, 1500));
-    } else if (chosenMood === 'angry') {
-      const firstDir = Math.random() < 0.5 ? -2 : 2;
-      tgtLookX = firstDir;
-      tgtLookY = 0;
-      moodGlanceTimers.push(setTimeout(() => {
-        if (!isIdleActive || currentMood !== 'angry') return;
-        tgtLookX = -firstDir;
-      }, 950));
-      moodGlanceTimers.push(setTimeout(() => {
-        if (!isIdleActive || currentMood !== 'angry') return;
-        tgtLookX = firstDir;
-      }, 1950));
-    } else if (chosenMood === 'sleepy') {
-      runSleepySequence(moodGlanceTimers);
-    } else if (chosenMood === 'hearteyes') {
-      loveTick = 0;
-      lastLoveTime = performance.now();
-      tgtLookX = 0;
-      tgtLookY = 0;
-      curLookX = 0;
-      curLookY = 0;
-      drawEyes();
-
-      // Sequence: 😍 hearteyes (2.4s) -> normal eyes (1.4s) -> 😘 kiss (2.8s) -> normal eyes
-      behaviorTimer = setTimeout(() => {
-        if (!isIdleActive) return;
-        currentMood = 'normal';
-        curBlink = 0;
-        tgtBlink = 0;
-        tgtLookX = 0;
-        tgtLookY = 0;
-        drawEyes();
-        triggerBlink(false);
-
-        moodGlanceTimers.push(setTimeout(() => {
-          if (!isIdleActive || clockModeActive || bouncePhase !== 'none') return;
-          currentMood = 'kiss';
-          winkEyeSide = Math.random() < 0.5 ? 'right' : 'left';
-          kissProgress = 0;
-          curBlink = 0;
-          tgtBlink = 0;
-          drawEyes();
-
-          behaviorTimer = setTimeout(() => {
-            if (!isIdleActive) return;
-            currentMood = 'normal';
-            kissProgress = 0;
-            curBlink = 0;
-            tgtBlink = 0;
-            tgtLookX = 0;
-            tgtLookY = 0;
-            drawEyes();
-            behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
-          }, 2800);
-        }, 1400));
-      }, 2400);
-      return;
-    } else if (chosenMood === 'joy') {
-      giggleTick = 0;
-      lastGiggleTime = performance.now();
-      tgtLookX = Math.random() < 0.33 ? -1 : (Math.random() < 0.5 ? 1 : 0);
-      tgtLookY = 0;
-    } else {
-      tgtLookX = 0; tgtLookY = 0;
-      curLookX = 0; curLookY = 0;
-    }
-
-    drawEyes();
-
-    if (chosenMood === 'sleeping') {
-      behaviorTimer = setTimeout(() => {
-        if (!isIdleActive) return;
-        startFightSleepSequence();
-      }, 4500);
-      return;
-    }
-
-    const holdDuration = chosenMood === 'wink'
-      ? 1800
-      : chosenMood === 'sleepy'
-        ? 5100
-        : chosenMood === 'bored'
-          ? 3400
-          : chosenMood === 'joy'
-            ? (3200 + Math.random() * 800)
-            : chosenMood === 'angry'
-              ? (3000 + Math.random() * 800)
-              : (2800 + Math.random() * 1400);
-    behaviorTimer = setTimeout(() => {
-      if (!isIdleActive) return;
-      currentMood = 'normal';
-      sleepyYawnStage = 'idle';
-      resetBubbleGumState();
-      curBlink = 0;
-      tgtBlink = 0;
-      tgtLookX = 0;
-      tgtLookY = 0;
-      tgtEyeOffsetY = 0;
-      drawEyes();
-      behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
-    }, holdDuration);
+    activateSpecificMood(chosenMood, false);
     return;
   }
 
@@ -3430,9 +4585,10 @@ function scheduleNextBehavior() {
   }
 }
 
-function startIdleEyes() {
+function startIdleEyes(fromLab = false) {
   if (isIdleActive) return;
   isIdleActive = true;
+  labModeActive = fromLab;
   closeModal();
   closeSettings();
   resizeCanvas();
@@ -3456,16 +4612,23 @@ function startIdleEyes() {
   lastMouthAnimTime = 0;
   giggleTick = 0;
   lastGiggleTime = 0;
+  coolDropProgress = 0;
+  fxTick = 0;
 
   drawEyes();
   idleOverlay.classList.add('active');
   animFrameId = requestAnimationFrame(animationLoop);
-  behaviorTimer = setTimeout(scheduleNextBehavior, 1500);
-  schedulePeriodicPixelClock();
+  if (!fromLab) {
+    document.getElementById('lab-hud').classList.remove('visible');
+    behaviorTimer = setTimeout(scheduleNextBehavior, 1500);
+    schedulePeriodicPixelClock();
+  }
 }
 
 function stopIdleEyes() {
   isIdleActive = false;
+  labModeActive = false;
+  document.getElementById('lab-hud').classList.remove('visible');
   cancelAnimationFrame(animFrameId);
   clearTimeout(behaviorTimer);
   clearTimeout(panToUltrawideTimer);
