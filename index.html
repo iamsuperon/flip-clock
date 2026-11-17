@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=KdluB3cFRdepAlBAKaehV9gt6BLB-9_TtAfmBsUF801WG-Iw_cDCStG9ZzjrlRwQ4PuUeiojhkiNdek3fj3K0K1HCQySBUDCUE499peAcIeG6zDyTIdruVDCGuOqrQu8lArgBWRBJ_02ltCP5M6LZrbNaNj3EwTe7S9Hx_XlQhy0S7uWFjLskGhbD4O_fv05_0ydeb1_siBOmDA0kQwCqQRfIbU1X8d0NCdW6W_FTSe47T7U9qx5b_joAJjS7fwJ41tsumSIYMx2xBSUCnhx6e8ZKd0KpfKJoGHknLB04MWO1MIgc5ACRgM3GsTS4pmB" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jb250cmlidXRpb24udXNlcmNvbnRlbnQuZ29vZ2xlLmNvbS9kb3dubG9hZD9jPUNneGlZWEprWDNOMGIzSmhaMlVTVUJJTmNtVnpjRzl1YzJWZlpHRjBZUm9fQ2pBd00yUTNOemN3TlRNd1pEQXdOVFpoTURBd05qWXdOelZrTm1JeVpUUTJPREF3TmpJeE5qZGlZekF6WVdNM1ptVVNDeElIRU9TZ3RZTElBeGdCJmZpbGVuYW1lPWluZGV4Lmh0bWwmb3BpPTEwMzEzNTA1MA"/><style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=bZGc6b1MUro18Ulr2jqtQADFl3JLimSAmg0e_smaYmTDwoe2D63S_z0IUoSdM-Rxox6XDVvf21aJqm0whkUj4hBpsJRDhsoQgYcFB4tSF6DeUcLi1R2E4reqH0kVdbFYVhpxBXKa_qtXkl3U2xsWppHz7Xv35WjkhbUfPuSoAbcPClJYvwtLEDIJgo_jNL1di1Lqv45t9CO7o9aKOp_pQOyX4E6_Ltz08YnmDVIL8El2IXMCBXnpdHGCI_4Ef8V1XF65cFDRp-I5rh1Ol_s0K4IhgHLe1OgbZEgT3Jw0fb5w0ORpgob4uUd2EU_K0jfN" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jb250cmlidXRpb24udXNlcmNvbnRlbnQuZ29vZ2xlLmNvbS9kb3dubG9hZD9jPUNneGlZWEprWDNOMGIzSmhaMlVTVUJJTmNtVnpjRzl1YzJWZlpHRjBZUm9fQ2pBeU5XSmxPRGRsTldNMFl6TXdaVGN4TURBd05qWXdOelkwTWpjMlkySTFOREEwTlRFMk1URXlNMkV5WWpVek0yTVNDeElIRU9TZ3RZTElBeGdCJmZpbGVuYW1lPWluZGV4Lmh0bWwmb3BpPTEwMzEzNTA1MA"/><style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; width: 100%; overflow: hidden; }
 
@@ -1992,7 +1992,7 @@ const LAB_EXPRESSIONS = [
   { id: 'sleeping',   icon: '😴', name: 'Sleeping Zzz',  tag: 'LOOP' },
   { id: 'shocked',    icon: '😲', name: 'Shocked',       tag: 'SWEAT'},
   { id: 'dizzy',      icon: '😵‍💫', name: 'Dizzy Spiral',  tag: 'NEW'  },
-  { id: 'cry',        icon: '😭', name: 'Pixel Tears',   tag: 'NEW'  },
+  { id: 'cry',        icon: '😭', name: 'Flood & Fish',  tag: 'SEQ'  },
   { id: 'glitch',     icon: '👾', name: 'Matrix Glitch', tag: 'NEW'  },
   { id: 'angry',      icon: '😠', name: 'Grumpy Shift',  tag: 'ANIM' },
   { id: 'clockpeek',  icon: '🕒', name: 'Clock Peek',    tag: 'PHYS' }
@@ -2045,6 +2045,7 @@ function launchExpressionPreview(idx) {
   curBlink = 0; tgtBlink = 0;
   sleepyYawnStage = 'idle';
   resetBubbleGumState();
+  resetCrySequenceState();
   coolDropProgress = 0;
   kissProgress = 0;
 
@@ -2105,6 +2106,18 @@ function resetBubbleGumState() {
   gumChewTick = 0;
   gumGlanced = false;
 }
+function resetCrySequenceState() {
+  cryStage = 'none';
+  cryStageTimer = 0;
+  waterLevel = 0;
+  wavePhase = 0;
+  fishProgress = 0;
+  fishX = -6;
+  fishY = 4;
+  fishFacing = 1;
+  fishTailTick = 0;
+  cryBubbles = [];
+}
 
 function schedulePeriodicPixelClock() {
   clearTimeout(periodicClockTimer);
@@ -2158,6 +2171,7 @@ function updateGazeFromPointer(clientX, clientY) {
   clearBlinkTimers();
   sleepyYawnStage = 'idle';
   resetBubbleGumState();
+  resetCrySequenceState();
 
   if (clockModeActive || bouncePhase !== 'none') {
     clearClockSequenceTimers();
@@ -2216,6 +2230,7 @@ document.addEventListener('mouseleave', e => {
   clearBlinkTimers();
   sleepyYawnStage = 'idle';
   resetBubbleGumState();
+  resetCrySequenceState();
 
   if (e.clientX <= 12) {
     currentMood = 'normal';
@@ -2265,6 +2280,8 @@ let behaviorTimer = null;
 let currentMood = 'normal';
 let winkEyeSide = 'right';
 let sleepyYawnStage = 'idle';
+
+// Bubblegum sequence state
 let gumStage = 'none';
 let gumStageTimer = 0;
 let gumRadius = 0;
@@ -2272,6 +2289,20 @@ let gumPopProgress = 0;
 let gumChewTick = 0;
 let gumGlanced = false;
 let lastGumTickTime = 0;
+
+// Exaggerated Cry -> Flood -> Goldfish -> Drain -> Happy sequence state
+let cryStage = 'none';
+let cryStageTimer = 0;
+let waterLevel = 0;
+let wavePhase = 0;
+let fishProgress = 0;
+let fishX = -6;
+let fishY = 4;
+let fishFacing = 1;
+let fishTailTick = 0;
+let lastFishTailTime = 0;
+let cryBubbles = [];
+let lastBubbleSpawnTime = 0;
 
 let giggleTick = 0;
 let lastGiggleTime = 0;
@@ -2499,6 +2530,24 @@ const MUSIC_NOTE_GLYPH = [
   "11100"
 ];
 
+// 7x5 Cute Goldfish Frames (facing right: '1' = bright orange, '3' = golden fin/tail, '2' = dark eye, '4' = white highlight)
+const GOLDFISH_FRAMES = [
+  [
+    "3003300",
+    "3111110",
+    "0141121",
+    "3111110",
+    "3003300"
+  ],
+  [
+    "0303300",
+    "3111110",
+    "3141121",
+    "3111110",
+    "0303300"
+  ]
+];
+
 const KISS_WINK_RIGHT = [
   "00001110000",
   "00111100000",
@@ -2618,10 +2667,16 @@ const MOUTH_MASKS = {
     "00000"
   ],
   cry: [
+    "01110",
+    "12221",
+    "12221",
+    "01110"
+  ],
+  holdbreath: [
     "00000",
-    "01010",
+    "01110",
     "10101",
-    "00000"
+    "01110"
   ],
   glitch: [
     "00000",
@@ -2743,7 +2798,9 @@ function drawEyes() {
   /* 1. Ambient OLED Screen Backlight Bloom */
   const ambientTint = (currentMood === 'hearteyes' || currentMood === 'kiss')
     ? '#ff2a6d'
-    : (currentMood === 'starstruck' ? '#fbbf24' : idleConfig.eyeColor);
+    : (currentMood === 'starstruck'
+        ? '#fbbf24'
+        : (currentMood === 'cry' ? '#38bdf8' : idleConfig.eyeColor));
   const { r: ar, g: ag, b: ab } = hexToRgb(ambientTint);
   const bloomGrad = ctx.createRadialGradient(
     w / 2, h / 2, gridH * 0.1,
@@ -2825,6 +2882,27 @@ function drawEyes() {
     ctx.restore();
   }
 
+  /* Helper for rising/draining water surface row per column */
+  const hasWater = (currentMood === 'cry' && waterLevel > 0.05 && cryStage !== 'happy_after');
+  function getWaterSurfaceY(gx) {
+    if (waterLevel >= 23.5) return -3;
+    const baseTop = 22 - waterLevel;
+    const wave1 = Math.sin(gx * 0.32 + wavePhase) * 0.72;
+    const wave2 = Math.cos(gx * 0.17 - wavePhase * 0.65) * 0.35;
+    return baseTop + wave1 + wave2;
+  }
+
+  /* 4b. Deep Underwater Background Fill & Caustic Shimmer (behind eyes/fish) */
+  if (hasWater) {
+    for (let gx = 0; gx < cols; gx++) {
+      const surfRow = Math.round(getWaterSurfaceY(gx));
+      for (let gy = Math.max(0, surfRow + 1); gy < rows; gy++) {
+        const caustic = Math.sin(gx * 0.45 + gy * 0.6 - wavePhase * 1.15) > 0.62;
+        lightLED(gx, gy, caustic ? '#0b3c5d' : '#07273e', false, false);
+      }
+    }
+  }
+
   const isMovingSocketMood = currentMood === 'sleepy' || currentMood === 'bored';
   const socketShiftX = (Math.abs(curLookX) >= 2 || (isMovingSocketMood && curLookX !== 0)) ? Math.sign(curLookX) : 0;
   const socketShiftY = (Math.abs(curLookY) >= 2 || (isMovingSocketMood && curLookY !== 0)) ? Math.sign(curLookY) : 0;
@@ -2869,7 +2947,6 @@ function drawEyes() {
         if (dy < topClip || dy > botClip) continue;
 
         const normY = r / 13;
-        // Subtle upper-eyelid ambient occlusion shadow for 3D socket depth
         const isUpperLidShadow = (dy === topClip && topClip > -7);
         const shadeFactor = isUpperLidShadow ? 0.48 : (0.56 + normY * 0.88);
         const shadedIris = shadeColor(idleConfig.eyeColor, shadeFactor);
@@ -2937,7 +3014,6 @@ function drawEyes() {
         }
       }
 
-      // Animated blue sweatdrop on right temple
       if (isRightEye && !clockModeActive) {
         const dropOffset = zzzTick % 3;
         const sx = 42;
@@ -3242,7 +3318,6 @@ function drawEyes() {
           lightLED(blushX + bx, blushY, '#f4729b', true);
         }
 
-        // Ambient floating mini pixel hearts
         if (isRightEye && !clockModeActive) {
           const floatUp = loveTick % 3;
           const miniHeart = [[0,0],[2,0],[0,1],[1,1],[2,1],[1,2]];
@@ -3308,7 +3383,6 @@ function drawEyes() {
             }
           }
         }
-        // Corner sparkles
         if (shimmer) {
           lightLED(ex - 7, ey - 4, '#ffffff', true, false);
           lightLED(ex + 7, ey + 3, '#fde047', true, false);
@@ -3321,7 +3395,6 @@ function drawEyes() {
 
       /* ── 7e. COOL SHADES 😎 (Drop-Down Pixel Sunglasses + Glint Sweep) ── */
       if (currentMood === 'cool') {
-        // Render subtle normal eye behind while shades drop down
         if (coolDropProgress < 0.85) {
           renderNormalOpenEye(scx, scy);
         }
@@ -3330,12 +3403,10 @@ function drawEyes() {
         const frameCol = shadeColor(idleConfig.eyeColor, 1.3);
         const lensCol  = '#0f172a';
         const glintCol = '#ffffff';
-        const glintPos = (fxTick % 8) - 2; // sweeps across lens
+        const glintPos = (fxTick % 8) - 2;
 
-        // Lens frame (13x7 centered at baseCx)
         for (let r = -3; r <= 3; r++) {
           for (let c = -6; c <= 6; c++) {
-            // Taper bottom corners slightly for sleek shades silhouette
             if (r === 3 && Math.abs(c) >= 5) continue;
             const gx = baseCx + c;
             const gy = ey + r;
@@ -3350,7 +3421,6 @@ function drawEyes() {
             }
           }
         }
-        // Nose bridge & temple arms
         if (!isRightEye) {
           for (let bx = 19; bx <= 26; bx++) {
             lightLED(bx, ey - 2, frameCol, true);
@@ -3377,7 +3447,6 @@ function drawEyes() {
             }
           }
         }
-        // Orbiting dizzy stars at top
         if (isRightEye && !clockModeActive) {
           const orbit = fxTick % 4;
           const starPositions = [
@@ -3392,32 +3461,77 @@ function drawEyes() {
         return;
       }
 
-      /* ── 7g. CRYING WATERFALLS 😭 ── */
+      /* ── 7g. EXAGGERATED CRY -> FLOOD -> GOLDFISH -> DRAIN -> HAPPY 😭🐟 ── */
       if (currentMood === 'cry') {
-        const eyeCol = shadeColor(idleConfig.eyeColor, 1.3);
-        const tearCol1 = '#38bdf8';
-        const tearCol2 = '#bae6fd';
-        const ey = Math.round(baseCy + curEyeOffsetY);
-
-        // Bold 'T' closed crying eye
-        for (let dx = -5; dx <= 5; dx++) {
-          lightLED(baseCx + dx, ey - 2, eyeCol, true);
-          lightLED(baseCx + dx, ey - 1, eyeCol, true);
-        }
-        for (let dy = 0; dy <= 3; dy++) {
-          lightLED(baseCx - 1, ey + dy, eyeCol, true);
-          lightLED(baseCx, ey + dy, eyeCol, true);
+        if (cryStage === 'happy_after') {
+          renderHappyArcEye();
+          return;
         }
 
-        // Animated streaming pixel tears cascading down to bottom of matrix
-        for (let ty = ey + 1; ty <= 20; ty++) {
-          const phase = (ty + fxTick) % 3;
-          lightLED(baseCx - 3, ty, phase === 0 ? tearCol2 : tearCol1, true, false);
-          lightLED(baseCx + 2, ty, phase === 1 ? tearCol2 : tearCol1, true, false);
-          if (ty >= 19) {
-            lightLED(baseCx - 4, 20, tearCol2, true, false);
-            lightLED(baseCx + 3, 20, tearCol2, true, false);
+        // Before water reaches the eyes: trembling wailing T-eyes with gushing tear rivers
+        if (waterLevel < 11.5 && (cryStage === 'crying' || cryStage === 'flooding')) {
+          const eyeCol = shadeColor(idleConfig.eyeColor, 1.32);
+          const tearCol1 = '#38bdf8';
+          const tearCol2 = '#bae6fd';
+          const quiverY = fxTick % 2;
+          const ey = Math.round(baseCy + curEyeOffsetY) + quiverY;
+
+          // Squeezed wailing brow angle + bold T crying eye
+          for (let dx = -5; dx <= 5; dx++) {
+            lightLED(baseCx + dx, ey - 2, eyeCol, true);
+            lightLED(baseCx + dx, ey - 1, eyeCol, true);
           }
+          const innerCorner = isRightEye ? -5 : 5;
+          lightLED(baseCx + innerCorner, ey - 3, eyeCol, true);
+          for (let dy = 0; dy <= 3; dy++) {
+            lightLED(baseCx - 1, ey + dy, eyeCol, true);
+            lightLED(baseCx, ey + dy, eyeCol, true);
+          }
+
+          // Twin thick waterfall rivers pouring out of outer & inner eye corners down to waterline
+          const leftStreamX = baseCx - 4;
+          const rightStreamX = baseCx + 3;
+          for (let ty = ey; ty <= 21; ty++) {
+            const surfRow = waterLevel > 0.2 ? Math.round(getWaterSurfaceY(baseCx)) : 22;
+            if (ty >= surfRow) {
+              // Splash foam right where the tear river crashes into the rising water!
+              lightLED(leftStreamX - 1, surfRow - 1, '#e0f2fe', true, false);
+              lightLED(leftStreamX + 2, surfRow - 1, '#7dd3fc', true, false);
+              lightLED(rightStreamX - 1, surfRow - 1, '#7dd3fc', true, false);
+              lightLED(rightStreamX + 2, surfRow - 1, '#e0f2fe', true, false);
+              break;
+            }
+            const phase1 = (ty - fxTick + 30) % 3;
+            const phase2 = (ty - fxTick + 31) % 3;
+            lightLED(leftStreamX, ty, phase1 === 0 ? tearCol2 : tearCol1, true, false);
+            lightLED(leftStreamX + 1, ty, phase2 === 0 ? '#e0f2fe' : tearCol1, true, false);
+            lightLED(rightStreamX, ty, phase2 === 0 ? tearCol2 : tearCol1, true, false);
+            lightLED(rightStreamX + 1, ty, phase1 === 0 ? '#e0f2fe' : tearCol1, true, false);
+
+            // Bottom splash droplets before water pool forms
+            if (ty >= 20 && waterLevel <= 0.3) {
+              lightLED(leftStreamX - 1, 21 - (fxTick % 2), '#e0f2fe', true, false);
+              lightLED(rightStreamX + 2, 21 - ((fxTick + 1) % 2), '#e0f2fe', true, false);
+            }
+          }
+          return;
+        }
+
+        // Underwater holding breath (waterLevel >= 11.5) & Draining:
+        // Eyes open wide and track the goldfish swimming around them!
+        curBlink = 0;
+        tgtBlink = 0;
+        if (cryStage === 'submerged') {
+          const dx = fishX - baseCx;
+          const dy = fishY - baseCy;
+          const dist = Math.hypot(dx, dy) || 1;
+          const offX = Math.max(-3.0, Math.min(3.0, (dx / dist) * 3.1));
+          const offY = Math.max(-3.0, Math.min(3.0, (dy / dist) * 3.1));
+          renderNormalOpenEye(baseCx, baseCy, { x: baseCx + offX, y: baseCy + offY });
+        } else if (cryStage === 'draining') {
+          renderNormalOpenEye(baseCx, baseCy, { x: baseCx, y: baseCy + 2 });
+        } else {
+          renderNormalOpenEye(baseCx, baseCy, { x: baseCx, y: baseCy - 1 });
         }
         return;
       }
@@ -3425,7 +3539,6 @@ function drawEyes() {
       /* ── 7h. MATRIX GLITCH 👾 ── */
       if (currentMood === 'glitch') {
         const glitchShift = (fxTick % 3 === 0) ? -2 : ((fxTick % 3 === 1) ? 2 : 0);
-        // Chromatic aberration ghost pixels
         for (let r = 0; r < 14; r++) {
           const rowShift = (r >= 4 && r <= 8) ? glitchShift : -Math.sign(glitchShift);
           for (let c = 0; c < 13; c++) {
@@ -3497,7 +3610,67 @@ function drawEyes() {
       const my = Math.round(16 + curEyeOffsetY + activeBreathY) + mouthShiftY;
       const mouthColor = shadeColor(idleConfig.eyeColor, 1.3);
 
-      if (currentMood === 'bubblegum') {
+      if (currentMood === 'cry') {
+        if (cryStage === 'happy_after') {
+          const happyMask = MOUTH_MASKS.happy;
+          for (let r = 0; r < happyMask.length; r++) {
+            for (let c = 0; c < happyMask[r].length; c++) {
+              if (happyMask[r][c] === '1') {
+                lightLED(20 + c, 16 + r, mouthColor, true);
+              }
+            }
+          }
+        } else if (waterLevel < 11.5 && (cryStage === 'crying' || cryStage === 'flooding')) {
+          // Exaggerated trembling wailing mouth
+          const wailFrames = [
+            ["01110", "12221", "12221", "01110"],
+            ["00100", "01210", "01210", "00100"]
+          ];
+          const wailMask = wailFrames[fxTick % 2];
+          for (let r = 0; r < wailMask.length; r++) {
+            for (let c = 0; c < wailMask[r].length; c++) {
+              const cell = wailMask[r][c];
+              if (cell === '1') {
+                lightLED(20 + c, 16 + r, mouthColor, true);
+              } else if (cell === '2') {
+                lightLED(20 + c, 16 + r, '#f4729b', true);
+              }
+            }
+          }
+        } else if (cryStage === 'draining') {
+          // Relieved little 'o' sigh as water drains
+          const sighMask = ["00110", "01001", "00110", "00000"];
+          for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 5; c++) {
+              if (sighMask[r][c] === '1') {
+                lightLED(20 + c, 16 + r, mouthColor, true);
+              }
+            }
+          }
+        } else {
+          // Holding breath underwater: tightly sealed wavy lips + puffed-out cheeks!
+          const hbMask = MOUTH_MASKS.holdbreath;
+          for (let r = 0; r < hbMask.length; r++) {
+            for (let c = 0; c < hbMask[r].length; c++) {
+              if (hbMask[r][c] === '1') {
+                lightLED(20 + c, 16 + r, mouthColor, true);
+              }
+            }
+          }
+          // Cute puffed cheeks on both sides of mouth
+          const cheekCol = '#f4729b';
+          const cheekHighlight = '#fda4af';
+          lightLED(17, 16, cheekHighlight, true, false);
+          lightLED(18, 16, cheekCol, true, false);
+          lightLED(17, 17, cheekCol, true, false);
+          lightLED(18, 17, cheekCol, true, false);
+
+          lightLED(26, 16, cheekCol, true, false);
+          lightLED(27, 16, cheekHighlight, true, false);
+          lightLED(26, 17, cheekCol, true, false);
+          lightLED(27, 17, cheekCol, true, false);
+        }
+      } else if (currentMood === 'bubblegum') {
         if (gumStage === 'chew') {
           const frame = GUM_CHEW_FRAMES[gumChewTick % GUM_CHEW_FRAMES.length];
           const chewBounceY = (gumChewTick % 2 === 1) ? 1 : 0;
@@ -3599,7 +3772,7 @@ function drawEyes() {
         if (activeMouthKey) {
           const mask = MOUTH_MASKS[activeMouthKey];
           const flipHoriz = (activeMouthKey === 'kiss' && winkEyeSide === 'left') ||
-                            ((activeMouthKey === 'dizzy' || activeMouthKey === 'cry') && fxTick % 2 === 1);
+                            (activeMouthKey === 'dizzy' && fxTick % 2 === 1);
           for (let r = 0; r < mask.length; r++) {
             for (let c = 0; c < mask[r].length; c++) {
               const srcC = flipHoriz ? (mask[r].length - 1 - c) : c;
@@ -3610,6 +3783,63 @@ function drawEyes() {
                 lightLED(mx + c, my + r, '#f4729b', true);
               }
             }
+          }
+        }
+      }
+    }
+
+    /* ── UNDERWATER AIR BUBBLES, CUTE GOLDFISH & WAVE SURFACE OVERLAY ── */
+    if (hasWater) {
+      // 1. Rising air bubbles while holding breath / draining
+      cryBubbles.forEach(b => {
+        const bx = Math.round(b.x + Math.sin(b.phase) * 0.75);
+        const by = Math.round(b.y);
+        const surfAtX = getWaterSurfaceY(bx);
+        if (by <= surfAtX) return;
+        if (b.size === 2) {
+          lightLED(bx, by, '#e0f2fe', true, false);
+          lightLED(bx + 1, by, '#7dd3fc', true, false);
+          lightLED(bx, by + 1, '#7dd3fc', true, false);
+          lightLED(bx + 1, by + 1, '#38bdf8', true, false);
+        } else {
+          lightLED(bx, by, '#bae6fd', true, false);
+        }
+      });
+
+      // 2. Cute Pixel Goldfish swimming one full round around the eyes
+      if (cryStage === 'submerged') {
+        const fishFrame = GOLDFISH_FRAMES[fishTailTick % GOLDFISH_FRAMES.length];
+        const fcx = Math.round(fishX);
+        const fcy = Math.round(fishY);
+        for (let r = 0; r < 5; r++) {
+          for (let c = 0; c < 7; c++) {
+            const srcC = fishFacing === 1 ? c : (6 - c);
+            const cell = fishFrame[r][srcC];
+            if (cell === '0') continue;
+            const gx = fcx - 3 + c;
+            const gy = fcy - 2 + r;
+            if (cell === '1') {
+              lightLED(gx, gy, '#fb923c', true, true);   // vibrant goldfish orange
+            } else if (cell === '3') {
+              lightLED(gx, gy, '#fde047', true, false);  // golden tail & dorsal fin
+            } else if (cell === '4') {
+              lightLED(gx, gy, '#ffffff', true, false);  // cute scale shine
+            } else if (cell === '2') {
+              lightLED(gx, gy, '#090d16', false, false); // crisp dark fish eye
+            }
+          }
+        }
+      }
+
+      // 3. Translucent Water Surface Wave Crest (ripples across screen while filling & draining)
+      if (waterLevel < 23.5) {
+        for (let gx = 0; gx < cols; gx++) {
+          const surfRow = Math.round(getWaterSurfaceY(gx));
+          if (surfRow >= 0 && surfRow < rows) {
+            lightLED(gx, surfRow, '#7dd3fc', true, false);
+          }
+          if (surfRow + 1 >= 0 && surfRow + 1 < rows) {
+            lightLED(gx, surfRow + 1, '#0284c7', false, false);
           }
         }
       }
@@ -4019,7 +4249,7 @@ function animationLoop(timestamp) {
   }
 
   const fxMoods = ['starstruck', 'cool', 'dizzy', 'cry', 'glitch', 'vibing'];
-  if (fxMoods.includes(currentMood) && bouncePhase === 'none' && curEyeOffsetY > -21 && timestamp - lastFxTime >= 160) {
+  if (fxMoods.includes(currentMood) && bouncePhase === 'none' && curEyeOffsetY > -21 && timestamp - lastFxTime >= 150) {
     lastFxTime = timestamp;
     fxTick++;
     needsDraw = true;
@@ -4037,7 +4267,140 @@ function animationLoop(timestamp) {
     needsDraw = true;
   }
 
-  /* ── 4. State-Driven Bubble Gum Chewing, Inflation, Full Pop & Recovery ── */
+  /* ── 4. State-Driven Exaggerated Cry -> Flood -> Goldfish -> Drain -> Happy Sequence ── */
+  if (currentMood === 'cry' && bouncePhase === 'none' && curEyeOffsetY > -21) {
+    cryStageTimer += dt;
+    wavePhase += dt * 4.6;
+
+    if (cryStage === 'crying') {
+      needsDraw = true;
+      if (cryStageTimer >= 0.55) {
+        cryStage = 'flooding';
+        cryStageTimer = 0;
+        waterLevel = 0.5;
+      }
+    } else if (cryStage === 'flooding') {
+      waterLevel = Math.min(24, waterLevel + 7.2 * dt);
+      needsDraw = true;
+
+      if (waterLevel >= 24) {
+        cryStage = 'submerged';
+        cryStageTimer = 0;
+        fishProgress = 0;
+        fishX = -6;
+        fishY = 4;
+        fishFacing = 1;
+        cryBubbles = [];
+        lastBubbleSpawnTime = timestamp - 500;
+      }
+    } else if (cryStage === 'submerged') {
+      needsDraw = true;
+
+      // Tail wag animation
+      if (timestamp - lastFishTailTime >= 150) {
+        lastFishTailTime = timestamp;
+        fishTailTick++;
+      }
+
+      // Spawn rising air bubbles while holding breath
+      if (timestamp - lastBubbleSpawnTime >= 620) {
+        lastBubbleSpawnTime = timestamp;
+        cryBubbles.push({
+          x: 20.5 + Math.random() * 4,
+          y: 14.5,
+          speed: 4.5 + Math.random() * 2.5,
+          phase: Math.random() * Math.PI * 2,
+          size: Math.random() < 0.35 ? 2 : 1
+        });
+      }
+      cryBubbles.forEach(b => {
+        b.y -= b.speed * dt;
+        b.phase += dt * 4.5;
+      });
+      cryBubbles = cryBubbles.filter(b => b.y > -2);
+
+      // Goldfish swims in -> makes 1 full lap around both eyes -> swims offscreen right
+      fishProgress = Math.min(1, fishProgress + dt / 4.8);
+      const prevX = fishX;
+
+      if (fishProgress < 0.16) {
+        // Smooth entry from offscreen left to top-left above eyes
+        const u = fishProgress / 0.16;
+        const ease = 1 - Math.pow(1 - u, 2);
+        const startAngle = -Math.PI * 0.72;
+        const targetX = 22.5 + Math.cos(startAngle) * 18.2;
+        const targetY = 10.8 + Math.sin(startAngle) * 7.4;
+        fishX = -6 + (targetX - (-6)) * ease;
+        fishY = 4.2 + (targetY - 4.2) * ease;
+      } else if (fishProgress < 0.84) {
+        // Complete 1 full 360° elliptical lap around the eyes
+        const u = (fishProgress - 0.16) / 0.68;
+        const theta = -Math.PI * 0.72 + u * Math.PI * 2;
+        fishX = 22.5 + Math.cos(theta) * 18.2;
+        fishY = 10.8 + Math.sin(theta) * 7.4;
+      } else {
+        // Swim smoothly offscreen to the right
+        const u = (fishProgress - 0.84) / 0.16;
+        const ease = u * u;
+        const endAngle = -Math.PI * 0.72 + Math.PI * 2;
+        const startX = 22.5 + Math.cos(endAngle) * 18.2;
+        const startY = 10.8 + Math.sin(endAngle) * 7.4;
+        fishX = startX + (52 - startX) * ease;
+        fishY = startY + (2.5 - startY) * ease;
+      }
+
+      const dx = fishX - prevX;
+      if (Math.abs(dx) > 0.005) {
+        fishFacing = dx >= 0 ? 1 : -1;
+      }
+
+      if (fishProgress >= 1) {
+        cryStage = 'draining';
+        cryStageTimer = 0;
+      }
+    } else if (cryStage === 'draining') {
+      // Rapid accelerating drain once the goldfish finishes its round
+      const drainSpeed = 20 + cryStageTimer * 52;
+      waterLevel = Math.max(0, waterLevel - drainSpeed * dt);
+      cryBubbles.forEach(b => {
+        b.y -= (b.speed * 1.4) * dt;
+      });
+      cryBubbles = cryBubbles.filter(b => b.y > -2);
+      needsDraw = true;
+
+      if (waterLevel <= 0) {
+        cryStage = 'happy_after';
+        cryStageTimer = 0;
+        waterLevel = 0;
+        cryBubbles = [];
+        curLookX = 0;
+        tgtLookX = 0;
+        curLookY = 0;
+        tgtLookY = 0;
+      }
+    } else if (cryStage === 'happy_after') {
+      needsDraw = true;
+      if (cryStageTimer >= 1.65) {
+        if (labModeActive) {
+          runCrySequence();
+        } else {
+          resetCrySequenceState();
+          currentMood = 'normal';
+          curBlink = 0;
+          tgtBlink = 0;
+          curLookX = 0;
+          tgtLookX = 0;
+          curLookY = 0;
+          tgtLookY = 0;
+          drawEyes();
+          clearTimeout(behaviorTimer);
+          behaviorTimer = setTimeout(scheduleNextBehavior, 1800 + Math.random() * 2200);
+        }
+      }
+    }
+  }
+
+  /* ── 5. State-Driven Bubble Gum Chewing, Inflation, Full Pop & Recovery ── */
   if (currentMood === 'bubblegum' && bouncePhase === 'none' && curEyeOffsetY > -21) {
     gumStageTimer += dt;
 
@@ -4152,6 +4515,7 @@ function startPixelClockSequence(fromLab = false) {
   tgtBlink = 0;
   sleepyYawnStage = 'idle';
   resetBubbleGumState();
+  resetCrySequenceState();
 
   currentMood = 'normal';
   tgtLookX = 0;
@@ -4240,6 +4604,29 @@ function runBubbleGumSequence() {
   tgtBlink = 0;
   tgtLookX = Math.random() < 0.5 ? -1 : 1;
   tgtLookY = 1;
+  drawEyes();
+}
+
+/* ── Exaggerated Cry -> Flood -> Goldfish Lap -> Drain -> Happy Sequence ── */
+function runCrySequence() {
+  cryStage = 'crying';
+  cryStageTimer = 0;
+  waterLevel = 0;
+  wavePhase = 0;
+  fishProgress = 0;
+  fishX = -6;
+  fishY = 4;
+  fishFacing = 1;
+  fishTailTick = 0;
+  cryBubbles = [];
+  fxTick = 0;
+  lastFxTime = performance.now();
+  curBlink = 0;
+  tgtBlink = 0;
+  curLookX = 0;
+  tgtLookX = 0;
+  curLookY = 0;
+  tgtLookY = 0;
   drawEyes();
 }
 
@@ -4340,6 +4727,7 @@ function activateSpecificMood(chosenMood, stayLockedInLab = false) {
   tgtBlink = 0;
   sleepyYawnStage = 'idle';
   resetBubbleGumState();
+  resetCrySequenceState();
   clearBlinkTimers();
   clearMoodGlanceTimers();
   clearFightSleepTimers();
@@ -4352,6 +4740,9 @@ function activateSpecificMood(chosenMood, stayLockedInLab = false) {
     runBoredSequence(moodGlanceTimers);
   } else if (chosenMood === 'bubblegum') {
     runBubbleGumSequence();
+    return;
+  } else if (chosenMood === 'cry') {
+    runCrySequence();
     return;
   } else if (chosenMood === 'suspicious') {
     const firstDir = Math.random() < 0.5 ? -2 : 2;
@@ -4382,7 +4773,6 @@ function activateSpecificMood(chosenMood, stayLockedInLab = false) {
     curLookX = 0; curLookY = 0;
     drawEyes();
 
-    // Sequence: 😍 hearteyes (2.4s) -> normal eyes (1.4s) -> 😘 kiss (2.8s) -> normal eyes
     behaviorTimer = setTimeout(() => {
       if (!isIdleActive) return;
       currentMood = 'normal';
@@ -4424,7 +4814,7 @@ function activateSpecificMood(chosenMood, stayLockedInLab = false) {
     lastFxTime = performance.now();
     tgtLookX = 0; tgtLookY = 0;
     curLookX = 0; curLookY = 0;
-  } else if (['starstruck', 'dizzy', 'cry', 'glitch'].includes(chosenMood)) {
+  } else if (['starstruck', 'dizzy', 'glitch'].includes(chosenMood)) {
     fxTick = 0;
     lastFxTime = performance.now();
     tgtLookX = 0; tgtLookY = 0;
@@ -4465,6 +4855,7 @@ function activateSpecificMood(chosenMood, stayLockedInLab = false) {
     currentMood = 'normal';
     sleepyYawnStage = 'idle';
     resetBubbleGumState();
+    resetCrySequenceState();
     curBlink = 0;
     tgtBlink = 0;
     tgtLookX = 0;
@@ -4537,8 +4928,8 @@ function scheduleNextBehavior() {
       { mood: 'angry',      weight: 5  },
       { mood: 'sleepy',     weight: 7  },
       { mood: 'sleeping',   weight: 5  },
+      { mood: 'cry',        weight: 6  },
       { mood: 'dizzy',      weight: 4  },
-      { mood: 'cry',        weight: 4  },
       { mood: 'glitch',     weight: 3  },
       { mood: 'shocked',    weight: 2  }
     ];
@@ -4561,6 +4952,7 @@ function scheduleNextBehavior() {
   currentMood = 'normal';
   sleepyYawnStage = 'idle';
   resetBubbleGumState();
+  resetCrySequenceState();
   curBlink = 0;
   tgtBlink = 0;
   if (roll < 0.22) {
@@ -4596,6 +4988,7 @@ function startIdleEyes(fromLab = false) {
   currentMood = 'normal';
   sleepyYawnStage = 'idle';
   resetBubbleGumState();
+  resetCrySequenceState();
   curLookX = 0; curLookY = 0;
   tgtLookX = 0; tgtLookY = 0;
   curBlink = 0; tgtBlink = 0;
@@ -4641,6 +5034,7 @@ function stopIdleEyes() {
   bouncePhase = 'none';
   sleepyYawnStage = 'idle';
   resetBubbleGumState();
+  resetCrySequenceState();
   eyeScaleX = 1.0; eyeScaleY = 1.0;
   curClockY = 23; tgtClockY = 23;
   curEyeOffsetY = 0; tgtEyeOffsetY = 0;
